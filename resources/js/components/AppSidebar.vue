@@ -1,18 +1,30 @@
 <script setup lang="ts">
+import NavAdmin from '@/components/NavAdmin.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-vue-next';
+import { Link, usePage } from '@inertiajs/vue3';
+import { BookOpen, Folder, LayoutGrid, Package } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
+
+const page = usePage();
+const user = page.props.auth?.user;
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: '/dashboard',
         icon: LayoutGrid,
+    },
+];
+
+const adminNavItems: NavItem[] = [
+    {
+        title: 'Packages',
+        href: '/admin/packages',
+        icon: Package,
     },
 ];
 
@@ -46,6 +58,7 @@ const footerNavItems: NavItem[] = [
 
         <SidebarContent>
             <NavMain :items="mainNavItems" />
+            <NavAdmin v-if="user && user.roles && user.roles.some((role: any) => role.name === 'admin')" :items="adminNavItems" />
         </SidebarContent>
 
         <SidebarFooter>
