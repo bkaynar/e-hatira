@@ -37,3 +37,4 @@ class Package extends Model
         return number_format($this->price, 2) . ' ' . $this->currency;
     }
 }
+

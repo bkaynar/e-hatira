@@ -6,7 +6,7 @@ import { Head, Link, usePage } from '@inertiajs/vue3';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import {
     Camera,
     Upload,
@@ -17,12 +17,16 @@ import {
     Heart,
     Download,
     Share2,
-    Plus
+    Plus,
+    Check,
+    MapPin
 } from 'lucide-vue-next';
 
 const page = usePage();
 const user = page.props.auth?.user;
 const showFeatureDiscovery = page.props.showFeatureDiscovery;
+const recentEvents = page.props.recentEvents || [];
+const stats = page.props.stats || {};
 const featureDiscoveryRef = ref<{ startTour: () => void } | null>(null);
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -32,19 +36,13 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-// Mock data - bu veriler gerçek API'dan gelecek
-const stats = [
-    { label: 'Total Events', value: '12', icon: Calendar, color: 'text-blue-600', bgColor: 'bg-blue-100' },
-    { label: 'Photos Uploaded', value: '234', icon: Camera, color: 'text-green-600', bgColor: 'bg-green-100' },
-    { label: 'Downloads', value: '1,456', icon: Download, color: 'text-purple-600', bgColor: 'bg-purple-100' },
-    { label: 'Likes Received', value: '89', icon: Heart, color: 'text-red-600', bgColor: 'bg-red-100' }
-];
-
-const recentEvents = [
-    { id: 1, name: 'Wedding Photography', date: '2024-01-15', photos: 45, status: 'completed' },
-    { id: 2, name: 'Birthday Party', date: '2024-01-20', photos: 28, status: 'processing' },
-    { id: 3, name: 'Corporate Event', date: '2024-01-25', photos: 67, status: 'active' }
-];
+// Stats configuration with real data
+const statsConfig = computed(() => [
+    { label: 'Total Events', value: stats.total_events || 0, icon: Calendar, color: 'text-blue-600', bgColor: 'bg-blue-100' },
+    { label: 'Photos Uploaded', value: stats.total_photos || 0, icon: Camera, color: 'text-green-600', bgColor: 'bg-green-100' },
+    { label: 'Approved Photos', value: stats.approved_photos || 0, icon: Check, color: 'text-purple-600', bgColor: 'bg-purple-100' },
+    { label: 'Pending Photos', value: stats.pending_photos || 0, icon: Clock, color: 'text-orange-600', bgColor: 'bg-orange-100' }
+]);
 
 const quickActions = [
     { title: 'Upload Photos', desc: 'Add new photos to your events', icon: Upload, action: 'upload', href: route('user.events.index') },
@@ -104,16 +102,14 @@ onMounted(() => {
                         Welcome back, {{ user?.name || 'User' }}! 👋
                     </h1>
                     <p class="text-lg text-gray-600 dark:text-gray-300 mb-6">
-                        Ready to capture and share your moments?
+                        {{ stats.total_events > 0 ? `You have ${stats.total_events} event${stats.total_events > 1 ? 's' : ''} with ${stats.total_photos} photos!` : 'Ready to capture and share your moments?' }}
                     </p>
-                    <Button 
-                        :href="route('user.events.create')"
-                        as="Link"
-                        class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 inline-flex items-center gap-2"
-                    >
-                        <Plus class="h-5 w-5" />
-                        Create Your First Event
-                    </Button>
+                    <Link :href="route('user.events.create')">
+                        <Button class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 inline-flex items-center gap-2">
+                            <Plus class="h-5 w-5" />
+                            {{ stats.total_events > 0 ? 'Create New Event' : 'Create Your First Event' }}
+                        </Button>
+                    </Link>
                 </div>
                 <div class="hidden md:block">
                     <div class="relative">
@@ -130,7 +126,7 @@ onMounted(() => {
 
         <!-- Stats Grid -->
         <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-            <Card v-for="stat in stats" :key="stat.label" class="hover:shadow-lg transition-shadow">
+            <Card v-for="stat in statsConfig" :key="stat.label" class="hover:shadow-lg transition-shadow">
                 <CardContent class="p-6">
                     <div class="flex items-center justify-between">
                         <div>
@@ -158,39 +154,58 @@ onMounted(() => {
                     </CardHeader>
                     <CardContent>
                         <div class="space-y-4">
-                            <div
-                                v-for="event in recentEvents"
-                                :key="event.id"
-                                class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                            >
-                                <div class="flex items-center gap-4">
-                                    <div class="h-10 w-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                                        <Camera class="h-5 w-5 text-white" />
+                            <div v-if="recentEvents.length === 0" class="text-center py-8">
+                                <Camera class="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No events yet</h3>
+                                <p class="text-gray-500 dark:text-gray-400 mb-4">Create your first event to start collecting photos</p>
+                                <Link :href="route('user.events.create')">
+                                    <Button class="bg-blue-600 hover:bg-blue-700">
+                                        <Plus class="w-4 h-4 mr-2" />
+                                        Create First Event
+                                    </Button>
+                                </Link>
+                            </div>
+                            <div v-else>
+                                <div
+                                    v-for="event in recentEvents"
+                                    :key="event.id"
+                                    class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                                    @click="$inertia.visit(route('user.events.show', event.id))"
+                                >
+                                    <div class="flex items-center gap-4">
+                                        <div class="h-12 w-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                                            <Camera class="h-6 w-6 text-white" />
+                                        </div>
+                                        <div>
+                                            <h4 class="font-semibold text-gray-900 dark:text-white">{{ event.name }}</h4>
+                                            <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                                                <MapPin class="h-3 w-3" />
+                                                <span>{{ event.location }}</span>
+                                                <span>•</span>
+                                                <span>{{ event.formatted_date }}</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h4 class="font-semibold text-gray-900 dark:text-white">{{ event.name }}</h4>
-                                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ event.date }}</p>
+                                    <div class="flex items-center gap-3">
+                                        <div class="text-right">
+                                            <div class="text-sm font-medium text-gray-900 dark:text-white">{{ event.photos_count }} photos</div>
+                                            <div class="text-xs text-gray-500">{{ event.approved_photos_count }} approved</div>
+                                        </div>
+                                        <Badge
+                                            :variant="event.status === 'published' ? 'default' : event.status === 'draft' ? 'secondary' : 'outline'"
+                                        >
+                                            {{ event.status }}
+                                        </Badge>
                                     </div>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <span class="text-sm text-gray-600 dark:text-gray-400">{{ event.photos }} photos</span>
-                                    <Badge
-                                        :variant="event.status === 'completed' ? 'success' : event.status === 'processing' ? 'secondary' : 'default'"
-                                    >
-                                        {{ event.status }}
-                                    </Badge>
                                 </div>
                             </div>
                         </div>
                         <div class="mt-6">
-                            <Button 
-                                :href="route('user.events.index')"
-                                as="Link"
-                                class="w-full" 
-                                variant="outline"
-                            >
-                                View All Events
-                            </Button>
+                            <Link :href="route('user.events.index')">
+                                <Button class="w-full" variant="outline">
+                                    View All Events
+                                </Button>
+                            </Link>
                         </div>
                     </CardContent>
                 </Card>
@@ -208,20 +223,22 @@ onMounted(() => {
                     </CardHeader>
                     <CardContent>
                         <div class="space-y-3">
-                            <Button
+                            <Link
                                 v-for="action in quickActions"
                                 :key="action.action"
                                 :href="action.href"
-                                as="Link"
-                                variant="outline"
-                                class="w-full justify-start gap-3 h-auto p-4"
                             >
-                                <component :is="action.icon" class="h-5 w-5 text-blue-600" />
-                                <div class="text-left">
-                                    <div class="font-medium">{{ action.title }}</div>
-                                    <div class="text-xs text-gray-500">{{ action.desc }}</div>
-                                </div>
-                            </Button>
+                                <Button
+                                    variant="outline"
+                                    class="w-full justify-start gap-3 h-auto p-4"
+                                >
+                                    <component :is="action.icon" class="h-5 w-5 text-blue-600" />
+                                    <div class="text-left">
+                                        <div class="font-medium">{{ action.title }}</div>
+                                        <div class="text-xs text-gray-500">{{ action.desc }}</div>
+                                    </div>
+                                </Button>
+                            </Link>
                         </div>
                     </CardContent>
                 </Card>

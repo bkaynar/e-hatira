@@ -54,12 +54,15 @@ class EventController extends Controller
 
         $event = Event::create($validated);
 
-        return redirect()->route('events.show', $event)->with('success', 'Event başarıyla oluşturuldu!');
+        return redirect()->route('user.events.show', $event)->with('success', 'Event başarıyla oluşturuldu!');
     }
 
     public function show(Event $event)
     {
-        $this->authorize('view', $event);
+        // Check if user can view this event
+        if (Auth::user()->id !== $event->user_id && !Auth::user()->hasRole('admin')) {
+            abort(403, 'Unauthorized access to event');
+        }
         
         $event->load(['user', 'package', 'photos' => function ($query) {
             $query->approved()->orderedByPosition();
@@ -103,7 +106,7 @@ class EventController extends Controller
 
         $event->update($validated);
 
-        return redirect()->route('events.show', $event)->with('success', 'Event başarıyla güncellendi!');
+        return redirect()->route('user.events.show', $event)->with('success', 'Event başarıyla güncellendi!');
     }
 
     public function destroy(Event $event)
@@ -112,6 +115,6 @@ class EventController extends Controller
         
         $event->delete();
 
-        return redirect()->route('events.index')->with('success', 'Event başarıyla silindi!');
+        return redirect()->route('user.events.index')->with('success', 'Event başarıyla silindi!');
     }
 }

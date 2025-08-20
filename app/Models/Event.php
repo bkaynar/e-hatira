@@ -35,7 +35,12 @@ class Event extends Model
         
         static::creating(function ($event) {
             if (empty($event->slug)) {
-                $event->slug = Str::slug($event->name);
+                // Generate unique random slug with date prefix
+                do {
+                    $datePrefix = now()->format('ymd');
+                    $randomSuffix = Str::random(8);
+                    $event->slug = $datePrefix . '-' . $randomSuffix;
+                } while (self::where('slug', $event->slug)->exists());
             }
         });
     }
