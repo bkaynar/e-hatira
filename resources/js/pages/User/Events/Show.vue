@@ -52,6 +52,8 @@ interface Event {
     user: User;
     package: Package;
     photos: EventPhoto[];
+    upload_url: string;
+    qr_code: string;
 }
 
 interface Props {
@@ -161,6 +163,81 @@ function formatFileSize(bytes: number) {
     const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)).toString());
     return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
 }
+
+async function copyToClipboard(text: string) {
+    try {
+        await navigator.clipboard.writeText(text);
+        alert('URL copied to clipboard!');
+    } catch (err) {
+        console.error('Failed to copy:', err);
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert('URL copied to clipboard!');
+    }
+}
+
+function downloadQRCode() {
+    try {
+        const qrContainer = document.getElementById('qr-code');
+        if (!qrContainer) return;
+
+        const svgElement = qrContainer.querySelector('svg');
+        if (!svgElement) return;
+
+        // Clone the SVG to avoid modifying the original
+        const clonedSvg = svgElement.cloneNode(true) as SVGElement;
+        
+        // Create a canvas to convert SVG to PNG
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        // Set canvas size (make it larger for better quality)
+        canvas.width = 400;
+        canvas.height = 400;
+
+        // Create an image from SVG
+        const svgData = new XMLSerializer().serializeToString(clonedSvg);
+        const svgBlob = new Blob([svgData], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(svgBlob);
+
+        const img = new Image();
+        img.onload = function() {
+            // Fill with white background
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw the QR code
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            
+            // Convert to blob and download
+            canvas.toBlob(function(blob) {
+                if (blob) {
+                    const downloadUrl = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = downloadUrl;
+                    link.download = `${props.event.name.replace(/[^a-zA-Z0-9]/g, '_')}_QR_Code.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(downloadUrl);
+                }
+            }, 'image/png');
+            
+            URL.revokeObjectURL(url);
+        };
+        
+        img.src = url;
+    } catch (error) {
+        console.error('Failed to download QR code:', error);
+        alert('Failed to download QR code. Please try again.');
+    }
+}
 </script>
 
 <template>
@@ -220,6 +297,82 @@ function formatFileSize(bytes: number) {
                             :alt="event.name"
                             class="max-w-sm rounded-lg shadow-sm"
                         />
+                    </div>
+                </CardContent>
+            </Card>
+
+            <!-- Guest Upload Section -->
+            <Card v-if="event.status === 'published'">
+                <CardHeader>
+                    <CardTitle class="flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                        </svg>
+                        Guest Photo Upload
+                    </CardTitle>
+                </CardHeader>
+                
+                <CardContent>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- QR Code -->
+                        <div class="text-center">
+                            <h3 class="font-medium mb-3">QR Code for Mobile Upload</h3>
+                            <div class="bg-white p-4 rounded-lg border inline-block" v-html="event.qr_code" id="qr-code"></div>
+                            <p class="text-sm text-muted-foreground mt-2 mb-3">
+                                Guests can scan this QR code to upload photos directly
+                            </p>
+                            <Button
+                                @click="downloadQRCode"
+                                variant="outline"
+                                size="sm"
+                                class="inline-flex items-center gap-2"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Download QR Code
+                            </Button>
+                        </div>
+                        
+                        <!-- Upload URL -->
+                        <div>
+                            <h3 class="font-medium mb-3">Direct Upload Link</h3>
+                            <div class="space-y-3">
+                                <div class="flex gap-2">
+                                    <input
+                                        :value="event.upload_url"
+                                        readonly
+                                        class="flex-1 px-3 py-2 border rounded-md bg-gray-50 text-sm"
+                                    />
+                                    <Button
+                                        @click="copyToClipboard(event.upload_url)"
+                                        variant="outline"
+                                        size="sm"
+                                    >
+                                        Copy
+                                    </Button>
+                                </div>
+                                
+                                <div class="flex gap-2">
+                                    <a
+                                        :href="event.upload_url"
+                                        target="_blank"
+                                        class="flex-1"
+                                    >
+                                        <Button variant="outline" class="w-full">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                            </svg>
+                                            Open Upload Page
+                                        </Button>
+                                    </a>
+                                </div>
+                                
+                                <p class="text-sm text-muted-foreground">
+                                    Share this link with guests so they can upload their photos from the event
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
@@ -287,7 +440,20 @@ function formatFileSize(bytes: number) {
             <!-- Photos Gallery -->
             <Card v-if="event.photos.length > 0">
                 <CardHeader>
-                    <CardTitle>Photo Gallery</CardTitle>
+                    <div class="flex justify-between items-center">
+                        <CardTitle>Photo Gallery ({{ event.photos.length }})</CardTitle>
+                        <div class="flex gap-2 text-sm">
+                            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                                {{ event.photos.filter(p => p.status === 'pending').length }} Pending
+                            </span>
+                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded">
+                                {{ event.photos.filter(p => p.status === 'approved').length }} Approved
+                            </span>
+                            <span class="bg-red-100 text-red-800 px-2 py-1 rounded">
+                                {{ event.photos.filter(p => p.status === 'rejected').length }} Rejected
+                            </span>
+                        </div>
+                    </div>
                 </CardHeader>
                 
                 <CardContent>
@@ -302,7 +468,7 @@ function formatFileSize(bytes: number) {
                             </div>
                             
                             <!-- Photo Info -->
-                            <div class="mt-2">
+                            <div class="mt-2 space-y-1">
                                 <div class="flex items-center justify-between">
                                     <Badge :class="getPhotoStatusColor(photo.status)" class="text-xs">
                                         {{ photo.status }}
@@ -312,12 +478,28 @@ function formatFileSize(bytes: number) {
                                     </span>
                                 </div>
                                 
-                                <p class="text-xs text-muted-foreground mt-1" :title="photo.original_name">
+                                <p class="text-xs text-muted-foreground" :title="photo.original_name">
                                     {{ photo.original_name.length > 20 ? photo.original_name.substring(0, 20) + '...' : photo.original_name }}
                                 </p>
                                 
-                                <div v-if="photo.uploader_name" class="text-xs text-muted-foreground">
-                                    By: {{ photo.uploader_name }}
+                                <!-- Uploader Info -->
+                                <div v-if="photo.uploader_name || photo.uploader_email" class="bg-gray-50 p-2 rounded text-xs">
+                                    <div v-if="photo.uploader_name" class="font-medium text-gray-700">
+                                        👤 {{ photo.uploader_name }}
+                                    </div>
+                                    <div v-if="photo.uploader_email" class="text-gray-600">
+                                        ✉️ {{ photo.uploader_email }}
+                                    </div>
+                                </div>
+                                
+                                <!-- Upload Date -->
+                                <div class="text-xs text-gray-500">
+                                    📅 {{ formatDate(photo.created_at) }}
+                                </div>
+                                
+                                <!-- File Info -->
+                                <div class="text-xs text-gray-500">
+                                    📁 {{ formatFileSize(photo.file_size) }}
                                 </div>
                             </div>
                             

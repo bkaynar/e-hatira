@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Inertia\Inertia;
+use Illuminate\Http\UploadedFile;
 
 class EventPhotoController extends Controller
 {
@@ -17,7 +18,7 @@ class EventPhotoController extends Controller
     {
         $request->validate([
             'photos' => 'required|array|max:10',
-            'photos.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120', // 5MB
+            'photos.*' => 'image|mimes:jpeg,png,jpg,gif,webp,heic,heif|max:5120', // 5MB (HEIC/WEBP dahil)
             'uploader_name' => 'nullable|string|max:255',
             'uploader_email' => 'nullable|email|max:255',
         ]);
@@ -25,8 +26,12 @@ class EventPhotoController extends Controller
         $uploadedPhotos = [];
 
         foreach ($request->file('photos') as $index => $photo) {
-            $path = $photo->store('event-photos/' . $event->id, 'public');
-            
+            $path = $this->storeWithCustomName(
+                $photo,
+                'event-photos/' . $event->id,
+                $request->uploader_email
+            );
+
             $eventPhoto = EventPhoto::create([
                 'event_id' => $event->id,
                 'photo_path' => $path,
@@ -52,7 +57,7 @@ class EventPhotoController extends Controller
     public function approve(EventPhoto $eventPhoto)
     {
         $this->authorize('update', $eventPhoto->event);
-        
+
         $eventPhoto->update(['status' => 'approved']);
 
         return back()->with('success', 'Fotoğraf onaylandı!');
@@ -61,7 +66,7 @@ class EventPhotoController extends Controller
     public function reject(EventPhoto $eventPhoto)
     {
         $this->authorize('update', $eventPhoto->event);
-        
+
         $eventPhoto->update(['status' => 'rejected']);
 
         return back()->with('success', 'Fotoğraf reddedildi!');
@@ -70,7 +75,7 @@ class EventPhotoController extends Controller
     public function destroy(EventPhoto $eventPhoto)
     {
         $this->authorize('update', $eventPhoto->event);
-        
+
         // Storage'dan dosyayı sil
         if (Storage::disk('public')->exists($eventPhoto->photo_path)) {
             Storage::disk('public')->delete($eventPhoto->photo_path);
@@ -116,12 +121,12 @@ class EventPhotoController extends Controller
 
     public function publicUploadPage($eventSlug)
     {
-        $event = Event::with(['package', 'photos' => function($query) {
+        $event = Event::with(['package', 'photos' => function ($query) {
             $query->approved()->orderedByPosition();
         }])
-        ->where('slug', $eventSlug)
-        ->where('status', 'published')
-        ->firstOrFail();
+            ->where('slug', $eventSlug)
+            ->where('status', 'published')
+            ->firstOrFail();
 
         return Inertia::render('Public/EventUpload', [
             'event' => [
@@ -144,21 +149,48 @@ class EventPhotoController extends Controller
             ->where('status', 'published')
             ->firstOrFail();
 
+        // FRONTEND Limitleri ile uyum:
+        // Görsel max ~15MB, Video max ~250MB
+        // Laravel 'max' KB cinsinden: 250MB ~= 256000KB
         $request->validate([
-            'files' => 'required|array|max:5', // Reduce to 5 files at once
-            'files.*' => 'file|mimes:jpeg,png,jpg,gif,mp4,mov,avi,wmv|max:2048', // 2MB max per file
+            'files' => 'required|array|max:20',
+            // Geniş mime listesi + yüksek üst sınır (video sınırına göre). Detaylı ayrımı aşağıda manuel yapıyoruz.
+            'files.*' => 'file|mimetypes:image/jpeg,image/png,image/jpg,image/gif,image/webp,image/heic,image/heif,video/mp4,video/quicktime,video/mov,video/avi,video/x-msvideo,video/wmv,video/x-ms-wmv|max:256000',
             'uploader_name' => 'required|string|max:255',
             'uploader_email' => 'required|email|max:255',
         ]);
+
+        // İnce taneli boyut kontrolü (görsel 15MB, video 250MB) ve özel mesajlar
+        $imageMaxBytes = 15 * 1024 * 1024;  // 15MB
+        $videoMaxBytes = 250 * 1024 * 1024; // 250MB
+        $perFileErrors = [];
+
+        foreach ($request->file('files') as $idx => $file) {
+            $isImage = str_starts_with($file->getMimeType(), 'image/');
+            $isVideo = str_starts_with($file->getMimeType(), 'video/');
+            if ($isImage && $file->getSize() > $imageMaxBytes) {
+                $perFileErrors["files.$idx"] = 'Görsel 15MB sınırını aşıyor.';
+            } elseif ($isVideo && $file->getSize() > $videoMaxBytes) {
+                $perFileErrors["files.$idx"] = 'Video 250MB sınırını aşıyor.';
+            }
+        }
+
+        if ($perFileErrors) {
+            return back()->withErrors($perFileErrors)->withInput();
+        }
 
         $uploadedFiles = [];
         $maxOrder = EventPhoto::where('event_id', $event->id)->max('order') ?? 0;
 
         foreach ($request->file('files') as $index => $file) {
-            // Determine storage path based on file type
             $folder = str_starts_with($file->getMimeType(), 'video/') ? 'event-videos' : 'event-photos';
-            $path = $file->store($folder . '/' . $event->id, 'public');
-            
+            $path = $this->storeWithCustomName(
+                $file,
+                $folder . '/' . $event->id,
+                $request->uploader_email,
+                $index
+            );
+
             $eventPhoto = EventPhoto::create([
                 'event_id' => $event->id,
                 'photo_path' => $path,
@@ -177,7 +209,56 @@ class EventPhotoController extends Controller
 
         $fileCount = count($uploadedFiles);
         $fileType = str_contains($uploadedFiles[0]->mime_type, 'video') ? 'dosya' : 'fotoğraf';
-        
+
         return back()->with('success', $fileCount . ' ' . $fileType . ' başarıyla yüklendi! Onay bekliyor.');
+    }
+
+    /**
+     * Dosyayı email + tarih formatıyla kaydeder.
+     * Örnek: user_example_com_20250821_153045_0.jpg
+     */
+    protected function storeWithCustomName(UploadedFile $file, string $directory, ?string $email = null, int $index = 0): string
+    {
+        $emailBase = $email ? preg_replace('/[^a-z0-9]+/i', '_', strtolower($email)) : 'anon';
+        $timestamp = now()->format('Ymd_His');
+        $ext = strtolower($file->getClientOriginalExtension());
+        if (!$ext) {
+            // MIME'dan tahmin (özellikle HEIC)
+            $mime = $file->getMimeType();
+            if (str_contains($mime, 'heic')) {
+                $ext = 'heic';
+            } elseif (str_contains($mime, 'heif')) {
+                $ext = 'heif';
+            } elseif (str_contains($mime, 'jpeg')) {
+                $ext = 'jpg';
+            } elseif (str_contains($mime, 'png')) {
+                $ext = 'png';
+            } elseif (str_contains($mime, 'gif')) {
+                $ext = 'gif';
+            } elseif (str_contains($mime, 'webp')) {
+                $ext = 'webp';
+            } elseif (str_contains($mime, 'mp4')) {
+                $ext = 'mp4';
+            } elseif (str_contains($mime, 'quicktime') || str_contains($mime, 'mov')) {
+                $ext = 'mov';
+            } elseif (str_contains($mime, 'avi')) {
+                $ext = 'avi';
+            } elseif (str_contains($mime, 'wmv')) {
+                $ext = 'wmv';
+            } else {
+                $ext = 'dat';
+            }
+        }
+
+        $base = $emailBase . '_' . $timestamp . '_' . $index;
+        $candidate = $base . '.' . $ext;
+        $i = 1;
+        while (Storage::disk('public')->exists(trim($directory, '/') . '/' . $candidate)) {
+            $candidate = $base . '_' . $i++ . '.' . $ext;
+        }
+
+        Storage::disk('public')->makeDirectory($directory);
+        Storage::disk('public')->putFileAs($directory, $file, $candidate);
+        return $directory . '/' . $candidate;
     }
 }

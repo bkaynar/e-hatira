@@ -14,7 +14,7 @@ Route::get('/', function () {
 })->name('home');
 
 // Public event photo upload
-Route::get('events/{eventSlug}', [EventPhotoController::class, 'publicUploadPage'])->name('events.public.page');
+Route::get('events/{eventSlug}', [EventPhotoController::class, 'publicUploadPage'])->name('events.public.upload.page');
 Route::post('events/{eventSlug}/upload', [EventPhotoController::class, 'publicUpload'])->name('events.public.upload');
 
 Route::middleware(['auth', 'verified'])->group(function () {

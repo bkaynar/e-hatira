@@ -69,4 +69,18 @@ class Event extends Model
     {
         return $this->hasMany(EventPhoto::class)->where('status', 'pending');
     }
+
+    // Upload URL getter
+    public function getUploadUrlAttribute(): string
+    {
+        return route('events.public.upload.page', $this->slug);
+    }
+
+    // QR Code getter
+    public function getQrCodeAttribute(): string
+    {
+        return \SimpleSoftwareIO\QrCode\Facades\QrCode::size(200)
+            ->format('svg')
+            ->generate($this->upload_url);
+    }
 }

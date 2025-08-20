@@ -65,11 +65,14 @@ class EventController extends Controller
         }
         
         $event->load(['user', 'package', 'photos' => function ($query) {
-            $query->approved()->orderedByPosition();
+            $query->where('status', '!=', 'deleted')->orderBy('created_at', 'desc');
         }]);
 
         return Inertia::render('User/Events/Show', [
-            'event' => $event
+            'event' => array_merge($event->toArray(), [
+                'upload_url' => $event->upload_url,
+                'qr_code' => $event->qr_code,
+            ])
         ]);
     }
 

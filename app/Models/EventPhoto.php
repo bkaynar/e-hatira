@@ -27,6 +27,8 @@ class EventPhoto extends Model
         'order' => 'integer',
     ];
 
+    protected $appends = ['photo_url'];
+
     public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class);
