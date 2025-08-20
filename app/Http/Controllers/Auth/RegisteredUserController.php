@@ -40,7 +40,11 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'onboarding_completed' => false,
         ]);
+
+        // Assign the 'user' role
+        $user->assignRole('user');
 
         event(new Registered($user));
 

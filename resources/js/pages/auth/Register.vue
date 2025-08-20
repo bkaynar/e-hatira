@@ -4,13 +4,13 @@ import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import AuthBase from '@/layouts/AuthLayout.vue';
+import AuthSplitLayout from '@/layouts/auth/AuthSplitLayout.vue';
 import { Form, Head } from '@inertiajs/vue3';
 import { LoaderCircle } from 'lucide-vue-next';
 </script>
 
 <template>
-    <AuthBase title="Create an account" description="Enter your details below to create your account">
+    <AuthSplitLayout title="Create an account" description="Enter your details below to create your account">
         <Head title="Register" />
 
         <Form
@@ -64,5 +64,5 @@ import { LoaderCircle } from 'lucide-vue-next';
                 <TextLink :href="route('login')" class="underline underline-offset-4" :tabindex="6">Log in</TextLink>
             </div>
         </Form>
-    </AuthBase>
+    </AuthSplitLayout>
 </template>
