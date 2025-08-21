@@ -78,6 +78,11 @@ const handleUserInfoSubmit = () => {
     if (hasUserInfo.value) {
         form.uploader_name = uploaderInfo.value.name;
         form.uploader_email = uploaderInfo.value.email;
+        
+        // Save to localStorage for future use
+        localStorage.setItem('eventUpload_userName', uploaderInfo.value.name);
+        localStorage.setItem('eventUpload_userEmail', uploaderInfo.value.email);
+        
         showUserModal.value = false;
     }
 };
@@ -316,10 +321,42 @@ const handleUploadCancel = () => {
     uploadedFiles.value = 0;
 };
 
+const clearUserInfo = () => {
+    // Clear localStorage
+    localStorage.removeItem('eventUpload_userName');
+    localStorage.removeItem('eventUpload_userEmail');
+    
+    // Clear form data
+    uploaderInfo.value.name = '';
+    uploaderInfo.value.email = '';
+    form.uploader_name = '';
+    form.uploader_email = '';
+    emailError.value = '';
+    
+    // Show modal again
+    showUserModal.value = true;
+};
+
 onMounted(() => {
     // Hiçbir scroll bloklaması yok!
     document.body.style.overflow = '';
     document.documentElement.style.overflow = '';
+    
+    // Load saved user info from localStorage
+    const savedName = localStorage.getItem('eventUpload_userName');
+    const savedEmail = localStorage.getItem('eventUpload_userEmail');
+    
+    if (savedName && savedEmail) {
+        uploaderInfo.value.name = savedName;
+        uploaderInfo.value.email = savedEmail;
+        
+        // If both name and email are valid, automatically set form data and hide modal
+        if (validateEmail(savedEmail)) {
+            form.uploader_name = savedName;
+            form.uploader_email = savedEmail;
+            showUserModal.value = false;
+        }
+    }
 });
 </script>
 
@@ -453,9 +490,14 @@ onMounted(() => {
                                 </path>
                             </svg>
                             <h2 class="text-xl font-semibold text-gray-900">Fotoğraf ve Video Yükle</h2>
-                            <span v-if="uploaderInfo.name" class="bg-gray-100 text-gray-900 px-2 py-1 rounded text-sm">
-                                {{ uploaderInfo.name }}
-                            </span>
+                            <div v-if="uploaderInfo.name" class="flex items-center gap-2">
+                                <span class="bg-gray-100 text-gray-900 px-2 py-1 rounded text-sm">
+                                    {{ uploaderInfo.name }}
+                                </span>
+                                <button @click="clearUserInfo" class="text-red-500 hover:text-red-700 text-xs underline" title="Kullanıcı bilgilerini temizle">
+                                    Değiştir
+                                </button>
+                            </div>
                         </div>
                     </div>
 
