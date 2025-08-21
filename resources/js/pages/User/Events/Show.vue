@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ref } from 'vue';
 import VueEasyLightbox from 'vue-easy-lightbox';
+import Swal from 'sweetalert2';
 
 interface Package {
     id: number;
@@ -140,24 +141,91 @@ function uploadPhotos() {
 
 function approvePhoto(photoId: number) {
     const form = useForm({});
-    form.patch(`/user/events/${props.event.id}/photos/${photoId}/approve`);
+    form.patch(`/user/events/${props.event.id}/photos/${photoId}/approve`, {
+        preserveState: true,
+        preserveScroll: true,
+        onSuccess: (page) => {
+            if (page.props.flash?.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Başarılı!',
+                    text: page.props.flash.success,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
+        }
+    });
 }
 
 function rejectPhoto(photoId: number) {
     const form = useForm({});
-    form.patch(`/user/events/${props.event.id}/photos/${photoId}/reject`);
+    form.patch(`/user/events/${props.event.id}/photos/${photoId}/reject`, {
+        preserveState: true,
+        preserveScroll: true,
+        onSuccess: (page) => {
+            if (page.props.flash?.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Başarılı!',
+                    text: page.props.flash.success,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
+        }
+    });
 }
 
 function deletePhoto(photoId: number) {
-    if (confirm('Are you sure you want to delete this photo?')) {
-        const form = useForm({});
-        form.delete(`/user/events/${props.event.id}/photos/${photoId}`);
-    }
+    Swal.fire({
+        title: 'Emin misiniz?',
+        text: 'Bu fotoğrafı silmek istediğinizden emin misiniz?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Evet, sil!',
+        cancelButtonText: 'İptal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const form = useForm({});
+            form.delete(`/user/events/${props.event.id}/photos/${photoId}`, {
+                preserveState: true,
+                preserveScroll: true,
+                onSuccess: (page) => {
+                    if (page.props.flash?.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Başarılı!',
+                            text: page.props.flash.success,
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    }
+                }
+            });
+        }
+    });
 }
 
 function setCoverPhoto(photoId: number) {
     const form = useForm({});
-    form.patch(`/user/events/${props.event.id}/photos/${photoId}/set-cover`);
+    form.patch(`/user/events/${props.event.id}/photos/${photoId}/set-cover`, {
+        preserveState: true,
+        preserveScroll: true,
+        onSuccess: (page) => {
+            if (page.props.flash?.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Başarılı!',
+                    text: page.props.flash.success,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
+        }
+    });
 }
 
 function formatDate(dateString: string) {
@@ -438,16 +506,28 @@ function downloadQRCode() {
                 <CardHeader>
                     <div class="flex justify-between items-center">
                         <CardTitle>Photo Gallery ({{ event.photos.length }})</CardTitle>
-                        <div class="flex gap-2 text-sm">
-                            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-                                {{event.photos.filter(p => p.status === 'pending').length}} Pending
-                            </span>
-                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded">
-                                {{event.photos.filter(p => p.status === 'approved').length}} Approved
-                            </span>
-                            <span class="bg-red-100 text-red-800 px-2 py-1 rounded">
-                                {{event.photos.filter(p => p.status === 'rejected').length}} Rejected
-                            </span>
+                        <div class="flex items-center gap-4">
+                            <div class="flex gap-2 text-sm">
+                                <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                                    {{event.photos.filter(p => p.status === 'pending').length}} Pending
+                                </span>
+                                <span class="bg-green-100 text-green-800 px-2 py-1 rounded">
+                                    {{event.photos.filter(p => p.status === 'approved').length}} Approved
+                                </span>
+                                <span class="bg-red-100 text-red-800 px-2 py-1 rounded">
+                                    {{event.photos.filter(p => p.status === 'rejected').length}} Rejected
+                                </span>
+                            </div>
+                            <a :href="`/user/events/${event.id}/photos/download-all`" target="_blank">
+                                <Button variant="outline" size="sm" class="inline-flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                        </path>
+                                    </svg>
+                                    Tüm Fotoğrafları İndir
+                                </Button>
+                            </a>
                         </div>
                     </div>
                 </CardHeader>

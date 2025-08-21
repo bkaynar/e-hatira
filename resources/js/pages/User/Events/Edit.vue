@@ -82,7 +82,9 @@ const form = useForm({
 });
 
 function submitForm() {
-    form.put(`/user/events/${props.event.id}`, {
+    form.post(`/user/events/${props.event.id}`, {
+        forceFormData: true,
+        _method: 'PUT',
         onSuccess: () => {
             // Success message will be handled by the controller
         },

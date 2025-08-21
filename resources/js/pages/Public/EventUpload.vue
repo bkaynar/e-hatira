@@ -56,6 +56,8 @@ const hasUserInfo = computed(() => {
     return uploaderInfo.value.name && uploaderInfo.value.email && !emailError.value;
 });
 
+// Backend'den zaten formatlanmış tarih geliyor
+
 // Methods
 const handleUserInfoSubmit = () => {
     // Clear previous errors
@@ -324,7 +326,7 @@ onMounted(() => {
 
         <!-- User Info Modal -->
         <div v-if="showUserModal"
-            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-40">
+            class="fixed inset-0 animated-gradient-bg flex items-center justify-center p-4 z-40">
             <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
                 <div class="text-center mb-6">
                     <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -336,21 +338,21 @@ onMounted(() => {
                                 d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
                         </svg>
                     </div>
-                    <h2 class="text-xl font-bold text-gray-900 mb-2">Welcome to {{ event.name }}!</h2>
-                    <p class="text-gray-600">Please enter your details to upload photos and videos</p>
+                    <h2 class="text-xl font-bold text-gray-900 mb-2">{{ event.name }}!</h2>
+                    <p class="text-gray-600 font-bold">{{ event.description }}</p>
                 </div>
 
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Your Name *</label>
-                        <input v-model="uploaderInfo.name" type="text" placeholder="Enter your full name"
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Adınız *</label>
+                        <input v-model="uploaderInfo.name" type="text" placeholder="Adınızı girin"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             required />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email Adresi *</label>
                         <input v-model="uploaderInfo.email" @input="handleEmailInput" type="email"
-                            placeholder="Enter your email" :class="{
+                            placeholder="Email adresinizi girin" :class="{
                                 'border-red-500 focus:ring-red-500': emailError,
                                 'border-gray-300 focus:ring-blue-500': !emailError
                             }" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2" required />
@@ -358,7 +360,7 @@ onMounted(() => {
                     </div>
                     <button @click="handleUserInfoSubmit" :disabled="!hasUserInfo"
                         class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition-colors">
-                        Continue to Upload
+                        Yüklemeye Devam Et
                     </button>
                 </div>
             </div>
@@ -368,8 +370,9 @@ onMounted(() => {
         <div class="container mx-auto px-4 py-8">
             <!-- Header -->
             <div class="text-center mb-8">
-                <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 overflow-hidden" :class="event.image ? 'bg-transparent' : 'bg-blue-100'">
+                    <img v-if="event.image" :src="`/storage/${event.image}`" :alt="event.name" class="w-20 h-20 object-cover rounded-full" />
+                    <svg v-else class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z">
                         </path>
@@ -403,7 +406,7 @@ onMounted(() => {
                                 d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z">
                             </path>
                         </svg>
-                        <span>{{ event.photos_count }} photos uploaded</span>
+                        <span>{{ event.photos_count }} adet fotoğraf yüklendi</span>
                     </div>
                 </div>
                 <p class="text-lg text-gray-600 max-w-2xl mx-auto">
@@ -421,7 +424,7 @@ onMounted(() => {
                                     d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
                                 </path>
                             </svg>
-                            <h2 class="text-xl font-semibold">Upload Photos & Videos</h2>
+                            <h2 class="text-xl font-semibold">Fotoğraf ve Video Yükle</h2>
                             <span v-if="uploaderInfo.name" class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm">
                                 {{ uploaderInfo.name }}
                             </span>
@@ -441,13 +444,13 @@ onMounted(() => {
                                     d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
                                 </path>
                             </svg>
-                            <h3 class="text-lg font-medium text-gray-900 mb-2">Drag & drop your files here</h3>
-                            <p class="text-gray-500 mb-4">or click to browse files</p>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">Dosyalarınızı buraya sürükleyin</h3>
+                            <p class="text-gray-500 mb-4">veya dosyaları tarayıcıdan seçmek için tıklayın</p>
                             <input type="file" multiple accept="image/*,video/*" @change="handleFileSelect"
                                 class="hidden" id="file-input" />
                             <label for="file-input"
                                 class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer">
-                                Choose Files
+                                Dosya Seç
                             </label>
                             <p class="text-xs text-gray-400 mt-2 leading-relaxed">
                                 Desteklenen görseller: JPG, PNG, GIF, WEBP, HEIC/HEIF • Max {{
@@ -543,7 +546,7 @@ onMounted(() => {
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M5 13l4 4L19 7"></path>
                                 </svg>
-                                Upload {{ form.files.length }} File{{ form.files.length !== 1 ? 's' : '' }}
+                                {{ form.files.length }} Dosya{{ form.files.length !== 1 ? 'lar' : '' }} Yükle
                             </button>
                         </div>
                     </div>
@@ -552,10 +555,11 @@ onMounted(() => {
                 <!-- Help Section -->
                 <div class="mt-6 bg-blue-50 rounded-lg p-6">
                     <div class="text-center space-y-3">
-                        <h3 class="font-medium text-gray-900">📸 Share Your Memories</h3>
+                        <h3 class="font-medium text-gray-900">📸 Anılarınızı Paylaşın</h3>
                         <p class="text-sm text-gray-600">
-                            All uploaded files will be reviewed before appearing in the gallery.
-                            Thank you for contributing to {{ event.name }}!
+                            Tüm yüklenen dosyalar galeriye eklenmeden önce incelenecektir.</p>
+                            <p class="text-sm text-gray-600">
+                            {{ event.name }} etkinliğine katkıda bulunduğunuz için teşekkür ederiz!
                         </p>
                     </div>
                 </div>
@@ -563,3 +567,23 @@ onMounted(() => {
         </div>
     </div>
 </template>
+
+<style scoped>
+.animated-gradient-bg {
+    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    background-size: 400% 400%;
+    animation: gradientBG 7s ease infinite;
+}
+
+@keyframes gradientBG {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+</style>

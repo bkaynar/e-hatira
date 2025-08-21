@@ -10,6 +10,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Inertia\Inertia;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
+use ZipArchive;
 
 class EventPhotoController extends Controller
 {
@@ -63,27 +64,39 @@ class EventPhotoController extends Controller
         ]);
     }
 
-    public function approve(EventPhoto $eventPhoto)
+    public function approve(Event $event, $eventPhotoId)
     {
-        $this->authorize('update', $eventPhoto->event);
+        $eventPhoto = EventPhoto::where('id', $eventPhotoId)
+            ->where('event_id', $event->id)
+            ->firstOrFail();
+            
+        $this->authorize('update', $event);
 
         $eventPhoto->update(['status' => 'approved']);
 
         return back()->with('success', 'Fotoğraf onaylandı!');
     }
 
-    public function reject(EventPhoto $eventPhoto)
+    public function reject(Event $event, $eventPhotoId)
     {
-        $this->authorize('update', $eventPhoto->event);
+        $eventPhoto = EventPhoto::where('id', $eventPhotoId)
+            ->where('event_id', $event->id)
+            ->firstOrFail();
+            
+        $this->authorize('update', $event);
 
         $eventPhoto->update(['status' => 'rejected']);
 
         return back()->with('success', 'Fotoğraf reddedildi!');
     }
 
-    public function destroy(EventPhoto $eventPhoto)
+    public function destroy(Event $event, $eventPhotoId)
     {
-        $this->authorize('update', $eventPhoto->event);
+        $eventPhoto = EventPhoto::where('id', $eventPhotoId)
+            ->where('event_id', $event->id)
+            ->firstOrFail();
+            
+        $this->authorize('update', $event);
 
         // Storage'dan dosyayı sil
         if (Storage::disk('public')->exists($eventPhoto->photo_path)) {
@@ -114,18 +127,93 @@ class EventPhotoController extends Controller
         return response()->json(['message' => 'Fotoğraf sıralaması güncellendi!']);
     }
 
-    public function setCover(EventPhoto $eventPhoto)
+    public function setCover(Event $event, $eventPhotoId)
     {
-        $this->authorize('update', $eventPhoto->event);
+        $eventPhoto = EventPhoto::where('id', $eventPhotoId)
+            ->where('event_id', $event->id)
+            ->firstOrFail();
+            
+        $this->authorize('update', $event);
 
         // Önce diğer kapak fotoğraflarını kaldır
-        EventPhoto::where('event_id', $eventPhoto->event_id)
+        EventPhoto::where('event_id', $event->id)
             ->update(['is_cover' => false]);
 
         // Bu fotoğrafı kapak yap
         $eventPhoto->update(['is_cover' => true]);
 
         return back()->with('success', 'Kapak fotoğrafı güncellendi!');
+    }
+
+    public function downloadAll(Event $event)
+    {
+        $this->authorize('view', $event);
+
+        $photos = EventPhoto::where('event_id', $event->id)
+            ->where('status', '!=', 'deleted')
+            ->get();
+
+        if ($photos->isEmpty()) {
+            return back()->with('error', 'Bu etkinlikte indirilebilecek fotoğraf bulunamadı.');
+        }
+
+        $zipFileName = $event->name . '_photos_' . now()->format('Y-m-d_H-i-s') . '.zip';
+        $zipFilePath = storage_path('app/temp/' . $zipFileName);
+
+        // Temp klasörü yoksa oluştur
+        if (!file_exists(storage_path('app/temp'))) {
+            mkdir(storage_path('app/temp'), 0755, true);
+        }
+
+        $zip = new ZipArchive;
+        if ($zip->open($zipFilePath, ZipArchive::CREATE) !== TRUE) {
+            return back()->with('error', 'ZIP dosyası oluşturulamadı.');
+        }
+
+        $addedFiles = 0;
+        foreach ($photos as $photo) {
+            $filePath = storage_path('app/public/' . $photo->photo_path);
+            
+            // Debug log ekle
+            Log::info('Processing photo for zip', [
+                'photo_id' => $photo->id,
+                'photo_path' => $photo->photo_path,
+                'full_path' => $filePath,
+                'file_exists' => file_exists($filePath),
+                'original_name' => $photo->original_name
+            ]);
+            
+            if (file_exists($filePath)) {
+                // Dosya adını düzenle (orijinal ad + ID)
+                $extension = pathinfo($photo->original_name, PATHINFO_EXTENSION);
+                $nameWithoutExt = pathinfo($photo->original_name, PATHINFO_FILENAME);
+                
+                $fileName = $nameWithoutExt . '_' . $photo->id . '.' . $extension;
+                
+                $zip->addFile($filePath, $fileName);
+                $addedFiles++;
+                Log::info('Added file to zip', ['file_name' => $fileName]);
+            } else {
+                Log::warning('File not found for photo', [
+                    'photo_id' => $photo->id,
+                    'expected_path' => $filePath
+                ]);
+            }
+        }
+        
+        Log::info('Zip creation summary', [
+            'total_photos' => $photos->count(),
+            'added_files' => $addedFiles
+        ]);
+
+        $zip->close();
+
+        if ($addedFiles === 0) {
+            unlink($zipFilePath);
+            return back()->with('error', 'İndirilebilecek dosya bulunamadı.');
+        }
+
+        return response()->download($zipFilePath)->deleteFileAfterSend(true);
     }
 
     public function publicUploadPage($eventSlug)
@@ -144,7 +232,7 @@ class EventPhotoController extends Controller
                 'slug' => $event->slug,
                 'description' => $event->description,
                 'location' => $event->location,
-                'event_date' => $event->event_date->format('M d, Y'),
+                'event_date' => $event->event_date->locale('tr')->isoFormat('D MMMM YYYY'),
                 'image' => $event->image,
                 'package_name' => $event->package?->name,
                 'photos_count' => $event->photos->count(),

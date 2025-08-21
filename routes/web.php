@@ -66,6 +66,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::patch('{eventPhoto}/set-cover', [EventPhotoController::class, 'setCover'])->name('set-cover');
             Route::patch('update-order', [EventPhotoController::class, 'updateOrder'])->name('update-order');
             Route::delete('{eventPhoto}', [EventPhotoController::class, 'destroy'])->name('destroy');
+            Route::get('download-all', [EventPhotoController::class, 'downloadAll'])->name('download-all');
         });
     });
 });
