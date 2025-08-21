@@ -6,6 +6,7 @@ import { Camera, Heart, Share2, QrCode, Users, Shield } from 'lucide-vue-next';
 </script>
 
 <template>
+
     <Head title="e-Hatıra - Etkinlik Anılarınızın Dijital Adresi" />
 
     <div class="min-h-screen animated-gradient-bg">
@@ -13,7 +14,7 @@ import { Camera, Heart, Share2, QrCode, Users, Shield } from 'lucide-vue-next';
         <div class="container mx-auto px-4 py-16">
             <div class="text-center text-white">
                 <h1 class="hero-title mb-6">
-                   e-Hatıra
+                    e-Hatıra
                 </h1>
                 <p class="slogan mb-8">
                     Etkinlik Anılarınızın Dijital Adresi
@@ -25,14 +26,14 @@ import { Camera, Heart, Share2, QrCode, Users, Shield } from 'lucide-vue-next';
                 <!-- CTA Buttons -->
                 <div class="flex flex-col md:flex-row gap-4 justify-center items-center mb-16">
                     <Link href="/register">
-                        <Button class="cta-btn cta-primary">
-                            Hemen Başlayın
-                        </Button>
+                    <Button class="cta-btn cta-primary">
+                        Hemen Başlayın
+                    </Button>
                     </Link>
                     <Link href="/login">
-                        <Button class="cta-btn cta-secondary">
-                            Giriş Yap
-                        </Button>
+                    <Button class="cta-btn cta-secondary">
+                        Giriş Yap
+                    </Button>
                     </Link>
                 </div>
             </div>
@@ -46,7 +47,8 @@ import { Camera, Heart, Share2, QrCode, Users, Shield } from 'lucide-vue-next';
                             <Camera class="w-12 h-12 mx-auto" />
                         </div>
                         <h3 class="text-xl font-bold mb-3 text-gray-800">Kolay Fotoğraf Yükleme</h3>
-                        <p class="text-gray-600">Misafirleriniz QR kod ile kolayca fotoğraf yükleyebilir. Sürükle-bırak ile hızlı yükleme.</p>
+                        <p class="text-gray-600">Misafirleriniz QR kod ile kolayca fotoğraf yükleyebilir. Sürükle-bırak
+                            ile hızlı yükleme.</p>
                     </CardContent>
                 </Card>
 
@@ -57,7 +59,8 @@ import { Camera, Heart, Share2, QrCode, Users, Shield } from 'lucide-vue-next';
                             <QrCode class="w-12 h-12 mx-auto" />
                         </div>
                         <h3 class="text-xl font-bold mb-3 text-gray-800">QR Kod ile Paylaşım</h3>
-                        <p class="text-gray-600">Her etkinlik için özel QR kod. Misafirler telefonlarıyla tarattıktan sonra direkt yükleme yapabilir.</p>
+                        <p class="text-gray-600">Her etkinlik için özel QR kod. Misafirler telefonlarıyla tarattıktan
+                            sonra direkt yükleme yapabilir.</p>
                     </CardContent>
                 </Card>
 
@@ -68,7 +71,8 @@ import { Camera, Heart, Share2, QrCode, Users, Shield } from 'lucide-vue-next';
                             <Users class="w-12 h-12 mx-auto" />
                         </div>
                         <h3 class="text-xl font-bold mb-3 text-gray-800">Toplu Yönetim</h3>
-                        <p class="text-gray-600">Tüm fotoğraflarınızı tek yerden yönetin. Onaylama, reddetme ve düzenleme işlemleri bir tık ile.</p>
+                        <p class="text-gray-600">Tüm fotoğraflarınızı tek yerden yönetin. Onaylama, reddetme ve
+                            düzenleme işlemleri bir tık ile.</p>
                     </CardContent>
                 </Card>
 
@@ -79,7 +83,8 @@ import { Camera, Heart, Share2, QrCode, Users, Shield } from 'lucide-vue-next';
                             <Share2 class="w-12 h-12 mx-auto" />
                         </div>
                         <h3 class="text-xl font-bold mb-3 text-gray-800">Galeri Payla_1m1</h3>
-                        <p class="text-gray-600">Etkinlik galerilerinizi public link ile payla_1n. 0steseniz indirme linkini de verebilirsiniz.</p>
+                        <p class="text-gray-600">Etkinlik galerilerinizi public link ile payla_1n. 0steseniz indirme
+                            linkini de verebilirsiniz.</p>
                     </CardContent>
                 </Card>
 
@@ -90,7 +95,8 @@ import { Camera, Heart, Share2, QrCode, Users, Shield } from 'lucide-vue-next';
                             <Shield class="w-12 h-12 mx-auto" />
                         </div>
                         <h3 class="text-xl font-bold mb-3 text-gray-800">Güvenli Depolama</h3>
-                        <p class="text-gray-600">Fotoğraflarınız güvenli sunucularımızda saklanır. HEIC formatları otomatik JPEG'e dönüştürülür.</p>
+                        <p class="text-gray-600">Fotoğraflarınız güvenli sunucularımızda saklanır. HEIC formatları
+                            otomatik JPEG'e dönüştürülür.</p>
                     </CardContent>
                 </Card>
 
@@ -101,7 +107,8 @@ import { Camera, Heart, Share2, QrCode, Users, Shield } from 'lucide-vue-next';
                             <Heart class="w-12 h-12 mx-auto" />
                         </div>
                         <h3 class="text-xl font-bold mb-3 text-gray-800">Anılarınızı Koruyun</h3>
-                        <p class="text-gray-600">Düğün, doğum günü, mezuniyet... Tüm özel anılarınızı dijital ortamda güvenle saklayın.</p>
+                        <p class="text-gray-600">Düğün, doğum günü, mezuniyet... Tüm özel anılarınızı dijital ortamda
+                            güvenle saklayın.</p>
                     </CardContent>
                 </Card>
             </div>
@@ -112,9 +119,9 @@ import { Camera, Heart, Share2, QrCode, Users, Shield } from 'lucide-vue-next';
                     Hemen Başlayın, İlk Etkinliğinizi Oluşturun!
                 </h2>
                 <Link href="/register">
-                    <Button class="cta-btn cta-primary text-lg px-12 py-4">
-                        Ücretsiz Hesap Oluştur
-                    </Button>
+                <Button class="cta-btn cta-primary text-lg px-12 py-4">
+                    Ücretsiz Hesap Oluştur
+                </Button>
                 </Link>
             </div>
 
@@ -129,7 +136,7 @@ import { Camera, Heart, Share2, QrCode, Users, Shield } from 'lucide-vue-next';
                     </a>
                 </div>
                 <p class="text-sm">
-                    © 2024 e-Hatira | Asya Bilişim
+                    © 2025 e-Hatira | Asya Bilişim
                 </p>
             </footer>
         </div>
@@ -147,9 +154,11 @@ import { Camera, Heart, Share2, QrCode, Users, Shield } from 'lucide-vue-next';
     0% {
         background-position: 0% 50%;
     }
+
     50% {
         background-position: 100% 50%;
     }
+
     100% {
         background-position: 0% 50%;
     }
