@@ -10,7 +10,7 @@ class AdminUserSeeder extends Seeder
 {
     public function run()
     {
-        User::updateOrCreate(
+        $admin1 = User::updateOrCreate(
             ['email' => 'bkaynar998@gmail.com'],
             [
                 'name' => 'admin_burak',
@@ -18,8 +18,9 @@ class AdminUserSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+        $admin1->assignRole('admin');
 
-        User::updateOrCreate(
+        $admin2 = User::updateOrCreate(
             ['email' => 'kurumsal@asyabilisim.com'],
             [
                 'name' => 'admin_burak1',
@@ -27,5 +28,6 @@ class AdminUserSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+        $admin2->assignRole('admin');
     }
 }
