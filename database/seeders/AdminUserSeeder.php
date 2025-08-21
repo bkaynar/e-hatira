@@ -10,18 +10,22 @@ class AdminUserSeeder extends Seeder
 {
     public function run()
     {
-        User::create([
-            'name' => 'admin_burak',
-            'email' => 'bkaynar998@gmail.com',
-            'password' => Hash::make('admin_burak'),
-            'email_verified_at' => now(),
-        ]);
+        User::updateOrCreate(
+            ['email' => 'bkaynar998@gmail.com'],
+            [
+                'name' => 'admin_burak',
+                'password' => Hash::make('admin_burak'),
+                'email_verified_at' => now(),
+            ]
+        );
 
-        User::create([
-            'name' => 'admin_burak1',
-            'email' => 'kurumsal@asyabilisim.com',
-            'password' => Hash::make('admin_burak1'),
-            'email_verified_at' => now(),
-        ]);
+        User::updateOrCreate(
+            ['email' => 'kurumsal@asyabilisim.com'],
+            [
+                'name' => 'admin_burak1',
+                'password' => Hash::make('admin_burak1'),
+                'email_verified_at' => now(),
+            ]
+        );
     }
 }
