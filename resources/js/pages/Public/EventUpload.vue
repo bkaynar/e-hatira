@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
+import heic2any from 'heic2any';
 import { ref, computed, onMounted } from 'vue';
 
 interface EventModel {
@@ -114,47 +115,76 @@ const formatBytes = (bytes: number) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
-const addFiles = (newFiles: File[]) => {
+const addFiles = async (newFiles: File[]) => {
+    console.log('Seçilen dosyalar:', newFiles.map(f => f.name));
     rejectedFiles.value = []; // yeni seçimde önceki reddedilenleri temizle
-
-    newFiles.forEach(file => {
-        const isImage = file.type.startsWith('image/');
-        const isVideo = file.type.startsWith('video/');
+    for (const original of newFiles) {
+        let file = original;
+        // Bazı iOS tarayıcılarında HEIC dosyalarının type değeri boş gelebiliyor.
+        const lowerName = file.name.toLowerCase();
+        const rawType = file.type;
+        console.log(`İşleniyor: ${file.name}, tip: ${rawType}, boyut: ${formatBytes(file.size)}`);
+        const looksHeicByName = (!rawType || rawType === '') && (lowerName.endsWith('.heic') || lowerName.endsWith('.heif'));
+        let isImage = rawType.startsWith('image/');
+        const isVideo = rawType.startsWith('video/');
+        if (!isImage && !isVideo && looksHeicByName) {
+            // HEIC olduğunu varsay
+            isImage = true;
+            file = new File([file], file.name, { type: 'image/heic' });
+            console.log(`HEIC olarak tanımlandı: ${file.name}`);
+        }
 
         if (!isImage && !isVideo) {
             rejectedFiles.value.push({ file, reason: 'Desteklenmeyen tür' });
-            return;
+            continue;
+        }
+
+        // HEIC/HEIF dönüştürme
+        if (isImage && (file.type === 'image/heic' || file.type === 'image/heif')) {
+            try {
+                const convertedResult = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+                const convertedBlob = Array.isArray(convertedResult) ? convertedResult[0] : convertedResult;
+                const jpegFile = new File([convertedBlob as BlobPart], file.name.replace(/\.(heic|heif)$/i, '') + '.jpg', { type: 'image/jpeg' });
+                file = jpegFile;
+            } catch {
+                rejectedFiles.value.push({ file, reason: 'HEIC dönüştürme başarısız' });
+                continue;
+            }
         }
 
         if (isImage && !ACCEPT_IMAGE_TYPES.includes(file.type)) {
             // HEIC bazı tarayıcılarda image/heic döner; yine de kabul listesine ekledik. Buraya düşerse tür açıkça desteklenmiyor.
+            console.log(`Desteklenmeyen görsel tipi: ${file.type}`);
             rejectedFiles.value.push({ file, reason: 'Görsel formatı desteklenmiyor' });
-            return;
+            continue;
         }
 
         if (isVideo && !ACCEPT_VIDEO_TYPES.includes(file.type)) {
+            console.log(`Desteklenmeyen video tipi: ${file.type}`);
             rejectedFiles.value.push({ file, reason: 'Video formatı desteklenmiyor' });
-            return;
+            continue;
         }
 
         const maxSize = isImage ? MAX_IMAGE_SIZE : MAX_VIDEO_SIZE;
         if (file.size > maxSize) {
+            console.log(`Dosya çok büyük: ${formatBytes(file.size)} > ${formatBytes(maxSize)}`);
             rejectedFiles.value.push({ file, reason: `Dosya çok büyük (>${formatBytes(maxSize)})` });
-            return;
+            continue;
         }
 
         // Aynı isim & boyutlu dosyayı tekrar eklemeyi engelle (isteğe bağlı)
         const duplicate = filePreviews.value.some(p => p.file.name === file.name && p.file.size === file.size);
         if (duplicate) {
+            console.log(`Tekrarlanan dosya: ${file.name}`);
             rejectedFiles.value.push({ file, reason: 'Zaten eklendi' });
-            return;
+            continue;
         }
 
         const type = isVideo ? 'video' : 'image';
         const preview = URL.createObjectURL(file);
         filePreviews.value.push({ file, preview, type });
         form.files.push(file);
-    });
+    }
 };
 
 const removeFile = (index: number) => {
@@ -169,6 +199,12 @@ const uploadFiles = async () => {
     isUploading.value = true;
     uploadProgress.value = 0;
 
+    // Dosyaların son durumunu log'a yazdır
+    console.log(`Upload başlıyor: ${form.files.length} dosya`);
+    form.files.forEach((file, idx) => {
+        console.log(`Dosya #${idx + 1}: ${file.name}, tip: ${file.type}, boyut: ${formatBytes(file.size)}`);
+    });
+
     const batchSize = 20; // Must match controller max:20
     const totalFiles = form.files.length;
     const batches = [];
@@ -178,10 +214,14 @@ const uploadFiles = async () => {
         batches.push(form.files.slice(i, i + batchSize));
     }
 
+    console.log(`${batches.length} batch oluşturuldu`);
+
     try {
         let totalUploadedFiles = 0;
 
         for (const [batchIndex, batch] of batches.entries()) {
+            console.log(`Batch #${batchIndex + 1} gönderiliyor (${batch.length} dosya)`);
+
             const batchForm = useForm({
                 files: batch,
                 uploader_name: form.uploader_name,
@@ -191,12 +231,13 @@ const uploadFiles = async () => {
             await new Promise((resolve, reject) => {
                 batchForm.post(route('events.public.upload', props.event.slug), {
                     onSuccess: (successResponse) => {
+                        console.log(`Batch #${batchIndex + 1} başarılı:`, successResponse);
                         totalUploadedFiles += batch.length;
                         uploadProgress.value = (totalUploadedFiles / totalFiles) * 100;
                         resolve(successResponse);
                     },
                     onError: (errors) => {
-                        console.error('Batch error details:', errors);
+                        console.error(`Batch #${batchIndex + 1} hata:`, errors);
                         serverFileErrors.value = errors as Record<string, string>;
                         reject(new Error(`Batch ${batchIndex + 1} failed: ${JSON.stringify(errors)}`));
                     }
@@ -207,6 +248,7 @@ const uploadFiles = async () => {
 
         // All batches completed successfully
         uploadProgress.value = 100;
+        console.log(`Tüm dosyalar başarıyla yüklendi: ${totalUploadedFiles} dosya`);
 
         // Show success message
         successMessage.value = `${totalUploadedFiles} dosya başarıyla yüklendi! Onay bekliyor.`;
@@ -227,9 +269,12 @@ const uploadFiles = async () => {
         }, 1000);
 
     } catch (error) {
-        console.error('Upload failed:', error);
+        console.error('Upload başarısız:', error);
         isUploading.value = false;
         uploadProgress.value = 0;
+
+        // Hata detaylarını göster
+        console.log('Server hata detayları:', serverFileErrors.value);
 
         // Show error message
         successMessage.value = 'Upload failed! Please try again.';

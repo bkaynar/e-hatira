@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ref } from 'vue';
+import VueEasyLightbox from 'vue-easy-lightbox';
 
 interface Package {
     id: number;
@@ -84,6 +85,12 @@ const uploadForm = useForm({
 });
 
 const selectedFiles = ref<File[]>([]);
+
+// Lightbox için
+const showLightbox = ref(false);
+const lightboxIndex = ref(0);
+const lightboxImages = ref<string[]>([]);
+const imageLoadStatus = ref<Record<string, boolean>>({});
 
 function getStatusColor(status: string) {
     switch (status) {
@@ -181,6 +188,20 @@ async function copyToClipboard(text: string) {
     }
 }
 
+function openLightbox(photoIndex: number) {
+    // Tüm fotoğrafları lightbox'a ekle
+    const photoUrls = props.event.photos.map(photo => photo.photo_url);
+
+    // Debug için URL'leri console'a yazdır
+    console.log('Lightbox URLs:', photoUrls);
+
+    lightboxImages.value = photoUrls;
+
+    // Tıklanan fotoğrafın index'ini direkt kullan
+    lightboxIndex.value = photoIndex;
+    showLightbox.value = true;
+}
+
 function downloadQRCode() {
     try {
         const qrContainer = document.getElementById('qr-code');
@@ -191,7 +212,7 @@ function downloadQRCode() {
 
         // Clone the SVG to avoid modifying the original
         const clonedSvg = svgElement.cloneNode(true) as SVGElement;
-        
+
         // Create a canvas to convert SVG to PNG
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -207,16 +228,16 @@ function downloadQRCode() {
         const url = URL.createObjectURL(svgBlob);
 
         const img = new Image();
-        img.onload = function() {
+        img.onload = function () {
             // Fill with white background
             ctx.fillStyle = 'white';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
+
             // Draw the QR code
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            
+
             // Convert to blob and download
-            canvas.toBlob(function(blob) {
+            canvas.toBlob(function (blob) {
                 if (blob) {
                     const downloadUrl = URL.createObjectURL(blob);
                     const link = document.createElement('a');
@@ -228,10 +249,10 @@ function downloadQRCode() {
                     URL.revokeObjectURL(downloadUrl);
                 }
             }, 'image/png');
-            
+
             URL.revokeObjectURL(url);
         };
-        
+
         img.src = url;
     } catch (error) {
         console.error('Failed to download QR code:', error);
@@ -241,8 +262,9 @@ function downloadQRCode() {
 </script>
 
 <template>
+
     <Head :title="event.name" />
-    
+
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6">
             <!-- Event Details -->
@@ -260,15 +282,15 @@ function downloadQRCode() {
                                 {{ event.description }}
                             </p>
                         </div>
-                        
+
                         <div class="flex gap-2">
                             <Link :href="`/user/events/${event.id}/edit`">
-                                <Button variant="outline">Edit</Button>
+                            <Button variant="outline">Edit</Button>
                             </Link>
                         </div>
                     </div>
                 </CardHeader>
-                
+
                 <CardContent>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
@@ -290,13 +312,9 @@ function downloadQRCode() {
                             <p>{{ event.photos.length }} uploaded</p>
                         </div>
                     </div>
-                    
+
                     <div v-if="event.image" class="mt-4">
-                        <img
-                            :src="`/storage/${event.image}`"
-                            :alt="event.name"
-                            class="max-w-sm rounded-lg shadow-sm"
-                        />
+                        <img :src="`/storage/${event.image}`" :alt="event.name" class="max-w-sm rounded-lg shadow-sm" />
                     </div>
                 </CardContent>
             </Card>
@@ -306,68 +324,61 @@ function downloadQRCode() {
                 <CardHeader>
                     <CardTitle class="flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z">
+                            </path>
                         </svg>
                         Guest Photo Upload
                     </CardTitle>
                 </CardHeader>
-                
+
                 <CardContent>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <!-- QR Code -->
                         <div class="text-center">
                             <h3 class="font-medium mb-3">QR Code for Mobile Upload</h3>
-                            <div class="bg-white p-4 rounded-lg border inline-block" v-html="event.qr_code" id="qr-code"></div>
+                            <div class="bg-white p-4 rounded-lg border inline-block" v-html="event.qr_code"
+                                id="qr-code"></div>
                             <p class="text-sm text-muted-foreground mt-2 mb-3">
                                 Guests can scan this QR code to upload photos directly
                             </p>
-                            <Button
-                                @click="downloadQRCode"
-                                variant="outline"
-                                size="sm"
-                                class="inline-flex items-center gap-2"
-                            >
+                            <Button @click="downloadQRCode" variant="outline" size="sm"
+                                class="inline-flex items-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                    </path>
                                 </svg>
                                 Download QR Code
                             </Button>
                         </div>
-                        
+
                         <!-- Upload URL -->
                         <div>
                             <h3 class="font-medium mb-3">Direct Upload Link</h3>
                             <div class="space-y-3">
                                 <div class="flex gap-2">
-                                    <input
-                                        :value="event.upload_url"
-                                        readonly
-                                        class="flex-1 px-3 py-2 border rounded-md bg-gray-50 text-sm"
-                                    />
-                                    <Button
-                                        @click="copyToClipboard(event.upload_url)"
-                                        variant="outline"
-                                        size="sm"
-                                    >
+                                    <input :value="event.upload_url" readonly
+                                        class="flex-1 px-3 py-2 border rounded-md bg-gray-50 text-sm" />
+                                    <Button @click="copyToClipboard(event.upload_url)" variant="outline" size="sm">
                                         Copy
                                     </Button>
                                 </div>
-                                
+
                                 <div class="flex gap-2">
-                                    <a
-                                        :href="event.upload_url"
-                                        target="_blank"
-                                        class="flex-1"
-                                    >
+                                    <a :href="event.upload_url" target="_blank" class="flex-1">
                                         <Button variant="outline" class="w-full">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14">
+                                                </path>
                                             </svg>
                                             Open Upload Page
                                         </Button>
                                     </a>
                                 </div>
-                                
+
                                 <p class="text-sm text-muted-foreground">
                                     Share this link with guests so they can upload their photos from the event
                                 </p>
@@ -382,40 +393,28 @@ function downloadQRCode() {
                 <CardHeader>
                     <CardTitle>Upload Photos</CardTitle>
                 </CardHeader>
-                
+
                 <CardContent>
                     <form @submit.prevent="uploadPhotos" class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium mb-2">Uploader Name (Optional)</label>
-                                <input
-                                    v-model="uploadForm.uploader_name"
-                                    type="text"
-                                    class="w-full px-3 py-2 border rounded-md"
-                                />
+                                <input v-model="uploadForm.uploader_name" type="text"
+                                    class="w-full px-3 py-2 border rounded-md" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-2">Uploader Email (Optional)</label>
-                                <input
-                                    v-model="uploadForm.uploader_email"
-                                    type="email"
-                                    class="w-full px-3 py-2 border rounded-md"
-                                />
+                                <input v-model="uploadForm.uploader_email" type="email"
+                                    class="w-full px-3 py-2 border rounded-md" />
                             </div>
                         </div>
-                        
+
                         <div>
                             <label class="block text-sm font-medium mb-2">Select Photos (Max 10)</label>
-                            <input
-                                id="photos"
-                                type="file"
-                                multiple
-                                accept="image/*"
-                                @change="handleFileSelect"
-                                class="w-full px-3 py-2 border rounded-md"
-                            />
+                            <input id="photos" type="file" multiple accept="image/*" @change="handleFileSelect"
+                                class="w-full px-3 py-2 border rounded-md" />
                         </div>
-                        
+
                         <div v-if="selectedFiles.length > 0" class="space-y-2">
                             <p class="text-sm text-muted-foreground">Selected Files:</p>
                             <ul class="text-sm">
@@ -424,12 +423,9 @@ function downloadQRCode() {
                                 </li>
                             </ul>
                         </div>
-                        
-                        <Button
-                            type="submit"
-                            :disabled="uploadForm.processing || selectedFiles.length === 0"
-                            class="bg-blue-600 hover:bg-blue-700"
-                        >
+
+                        <Button type="submit" :disabled="uploadForm.processing || selectedFiles.length === 0"
+                            class="bg-blue-600 hover:bg-blue-700">
                             <span v-if="uploadForm.processing">Uploading...</span>
                             <span v-else>Upload Photos</span>
                         </Button>
@@ -444,62 +440,62 @@ function downloadQRCode() {
                         <CardTitle>Photo Gallery ({{ event.photos.length }})</CardTitle>
                         <div class="flex gap-2 text-sm">
                             <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-                                {{ event.photos.filter(p => p.status === 'pending').length }} Pending
+                                {{event.photos.filter(p => p.status === 'pending').length}} Pending
                             </span>
                             <span class="bg-green-100 text-green-800 px-2 py-1 rounded">
-                                {{ event.photos.filter(p => p.status === 'approved').length }} Approved
+                                {{event.photos.filter(p => p.status === 'approved').length}} Approved
                             </span>
                             <span class="bg-red-100 text-red-800 px-2 py-1 rounded">
-                                {{ event.photos.filter(p => p.status === 'rejected').length }} Rejected
+                                {{event.photos.filter(p => p.status === 'rejected').length}} Rejected
                             </span>
                         </div>
                     </div>
                 </CardHeader>
-                
+
                 <CardContent>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        <div v-for="photo in event.photos" :key="photo.id" class="relative group">
-                            <div class="aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                                <img
-                                    :src="photo.photo_url"
+                        <div v-for="(photo, index) in event.photos" :key="photo.id" class="relative group">
+                            <div class="bg-white p-2 rounded-lg shadow cursor-pointer" @click="openLightbox(index)">
+                                <!-- En basit şekilde görüntüleme -->
+                                <img 
+                                    :src="photo.photo_url" 
                                     :alt="photo.original_name"
-                                    class="w-full h-full object-cover"
+                                    style="width: 100%; display: block; margin: 0 auto;" 
+                                    @error="console.error('Failed to load image:', photo.photo_url)"
+                                    @load="console.log('Image loaded successfully:', photo.photo_url)"
+                                    loading="lazy"
+                                    decoding="async"
                                 />
-                            </div>
-                            
-                            <!-- Photo Info -->
-                            <div class="mt-2 space-y-1">
-                                <div class="flex items-center justify-between">
-                                    <Badge :class="getPhotoStatusColor(photo.status)" class="text-xs">
-                                        {{ photo.status }}
-                                    </Badge>
-                                    <span v-if="photo.is_cover" class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                        Cover
-                                    </span>
-                                </div>
                                 
-                                <p class="text-xs text-muted-foreground" :title="photo.original_name">
-                                    {{ photo.original_name.length > 20 ? photo.original_name.substring(0, 20) + '...' : photo.original_name }}
-                                </p>
-                                
-                                <!-- Uploader Info -->
-                                <div v-if="photo.uploader_name || photo.uploader_email" class="bg-gray-50 p-2 rounded text-xs">
-                                    <div v-if="photo.uploader_name" class="font-medium text-gray-700">
-                                        👤 {{ photo.uploader_name }}
+                                <!-- Fotoğraf bilgileri -->
+                                <div class="mt-2">
+                                    <div class="flex items-center justify-between">
+                                        <Badge :class="getPhotoStatusColor(photo.status)" class="text-xs">
+                                            {{ photo.status }}
+                                        </Badge>
+                                        <span v-if="photo.is_cover" class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                            Cover
+                                        </span>
                                     </div>
-                                    <div v-if="photo.uploader_email" class="text-gray-600">
-                                        ✉️ {{ photo.uploader_email }}
+                                    
+                                    <p class="text-xs text-muted-foreground mt-1" :title="photo.original_name">
+                                        {{ photo.original_name.length > 20 ? photo.original_name.substring(0, 20) + '...' : photo.original_name }}
+                                    </p>
+                                    
+                                    <!-- Uploader Info -->
+                                    <div v-if="photo.uploader_name || photo.uploader_email" class="bg-gray-50 p-2 rounded text-xs mt-2">
+                                        <div v-if="photo.uploader_name" class="font-medium text-gray-700">
+                                            👤 {{ photo.uploader_name }}
+                                        </div>
+                                        <div v-if="photo.uploader_email" class="text-gray-600">
+                                            ✉️ {{ photo.uploader_email }}
+                                        </div>
                                     </div>
-                                </div>
-                                
-                                <!-- Upload Date -->
-                                <div class="text-xs text-gray-500">
-                                    📅 {{ formatDate(photo.created_at) }}
-                                </div>
-                                
-                                <!-- File Info -->
-                                <div class="text-xs text-gray-500">
-                                    📁 {{ formatFileSize(photo.file_size) }}
+                                    
+                                    <!-- File Info -->
+                                    <div class="text-xs text-gray-500 mt-2">
+                                        📅 {{ formatDate(photo.created_at) }} · 📁 {{ formatFileSize(photo.file_size) }}
+                                    </div>
                                 </div>
                             </div>
                             
@@ -508,7 +504,7 @@ function downloadQRCode() {
                                 <div class="flex flex-col gap-1">
                                     <button
                                         v-if="photo.status === 'pending'"
-                                        @click="approvePhoto(photo.id)"
+                                        @click.stop="approvePhoto(photo.id)"
                                         class="bg-green-600 hover:bg-green-700 text-white p-1 rounded text-xs"
                                         title="Approve"
                                     >
@@ -517,7 +513,7 @@ function downloadQRCode() {
                                     
                                     <button
                                         v-if="photo.status === 'pending'"
-                                        @click="rejectPhoto(photo.id)"
+                                        @click.stop="rejectPhoto(photo.id)"
                                         class="bg-red-600 hover:bg-red-700 text-white p-1 rounded text-xs"
                                         title="Reject"
                                     >
@@ -526,7 +522,7 @@ function downloadQRCode() {
                                     
                                     <button
                                         v-if="photo.status === 'approved' && !photo.is_cover"
-                                        @click="setCoverPhoto(photo.id)"
+                                        @click.stop="setCoverPhoto(photo.id)"
                                         class="bg-blue-600 hover:bg-blue-700 text-white p-1 rounded text-xs"
                                         title="Set as Cover"
                                     >
@@ -534,7 +530,7 @@ function downloadQRCode() {
                                     </button>
                                     
                                     <button
-                                        @click="deletePhoto(photo.id)"
+                                        @click.stop="deletePhoto(photo.id)"
                                         class="bg-red-600 hover:bg-red-700 text-white p-1 rounded text-xs"
                                         title="Delete"
                                     >
@@ -546,10 +542,14 @@ function downloadQRCode() {
                     </div>
                 </CardContent>
             </Card>
-            
+
             <div v-else class="text-center py-8 text-muted-foreground">
                 <p>No photos uploaded yet.</p>
             </div>
         </div>
+
+        <!-- Lightbox Component -->
+        <VueEasyLightbox :visible="showLightbox" :imgs="lightboxImages" :index="lightboxIndex"
+            @hide="showLightbox = false" />
     </AppLayout>
 </template>

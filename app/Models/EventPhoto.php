@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Log;
 
 class EventPhoto extends Model
 {
@@ -36,7 +37,18 @@ class EventPhoto extends Model
 
     public function getPhotoUrlAttribute(): string
     {
-        return asset('storage/' . $this->photo_path);
+        if (empty($this->photo_path)) {
+            Log::warning("Empty photo_path for photo id: {$this->id}");
+            return "";
+        }
+
+        // public/storage yolunu tam olarak oluşturur
+        $url = asset('storage/' . $this->photo_path);
+
+        // Hata ayıklama amaçlı
+        Log::info("Photo URL generated for ID {$this->id}: {$url}");
+
+        return $url;
     }
 
     public function scopeApproved($query)

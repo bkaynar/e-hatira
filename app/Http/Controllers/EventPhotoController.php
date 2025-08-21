@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Inertia\Inertia;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 
 class EventPhotoController extends Controller
 {
@@ -32,9 +33,17 @@ class EventPhotoController extends Controller
                 $request->uploader_email
             );
 
+            $finalPath = $path;
+            if (preg_match('/\.(heic|heif)$/i', $path)) {
+                $converted = $this->convertHeicToJpeg($path);
+                if ($converted) {
+                    $finalPath = $converted;
+                }
+            }
+
             $eventPhoto = EventPhoto::create([
                 'event_id' => $event->id,
-                'photo_path' => $path,
+                'photo_path' => $finalPath,
                 'original_name' => $photo->getClientOriginalName(),
                 'file_size' => $photo->getSize(),
                 'mime_type' => $photo->getMimeType(),
@@ -191,9 +200,17 @@ class EventPhotoController extends Controller
                 $index
             );
 
+            $finalPath = $path;
+            if (preg_match('/\.(heic|heif)$/i', $path)) {
+                $converted = $this->convertHeicToJpeg($path);
+                if ($converted) {
+                    $finalPath = $converted;
+                }
+            }
+
             $eventPhoto = EventPhoto::create([
                 'event_id' => $event->id,
-                'photo_path' => $path,
+                'photo_path' => $finalPath,
                 'original_name' => $file->getClientOriginalName(),
                 'file_size' => $file->getSize(),
                 'mime_type' => $file->getMimeType(),
@@ -260,5 +277,35 @@ class EventPhotoController extends Controller
         Storage::disk('public')->makeDirectory($directory);
         Storage::disk('public')->putFileAs($directory, $file, $candidate);
         return $directory . '/' . $candidate;
+    }
+    /**
+     * HEIC/HEIF -> JPEG dönüşümü. Başarılıysa yeni yol döner.
+     */
+    protected function convertHeicToJpeg(string $originalPath): ?string
+    {
+        try {
+            $disk = Storage::disk('public');
+            if (!$disk->exists($originalPath)) {
+                return null;
+            }
+            $data = $disk->get($originalPath);
+            $jpegPath = preg_replace('/\.(heic|heif)$/i', '.jpg', $originalPath);
+            /** @noinspection PhpUndefinedClassInspection */
+            if (class_exists('Imagick')) {
+                $class = 'Imagick';
+                $img = new $class();
+                $img->readImageBlob($data);
+                $img->setImageFormat('jpeg');
+                $img->setImageCompressionQuality(90);
+                $disk->put($jpegPath, $img->getImageBlob());
+                $img->clear();
+                $img->destroy();
+                return $jpegPath;
+            }
+            return null;
+        } catch (\Throwable $e) {
+            Log::warning('HEIC convert failed: ' . $e->getMessage());
+            return null;
+        }
     }
 }
