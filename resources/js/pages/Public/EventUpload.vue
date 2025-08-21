@@ -2,6 +2,7 @@
 import { Head, useForm } from '@inertiajs/vue3';
 import heic2any from 'heic2any';
 import { ref, computed, onMounted } from 'vue';
+import UploadProgressModal from '@/components/UploadProgressModal.vue';
 
 interface EventModel {
     id: number;
@@ -44,6 +45,11 @@ const successMessage = ref('');
 const isErrorMessage = ref(false);
 const emailError = ref('');
 const serverFileErrors = ref<Record<string, string>>({});
+const showProgressModal = ref(false);
+const currentFileName = ref('');
+const uploadedFiles = ref(0);
+const currentBatch = ref(0);
+const totalBatches = ref(0);
 
 // Email validation
 const validateEmail = (email: string) => {
@@ -200,6 +206,9 @@ const uploadFiles = async () => {
 
     isUploading.value = true;
     uploadProgress.value = 0;
+    showProgressModal.value = true;
+    uploadedFiles.value = 0;
+    currentBatch.value = 0;
 
     // Dosyaların son durumunu log'a yazdır
     console.log(`Upload başlıyor: ${form.files.length} dosya`);
@@ -216,12 +225,15 @@ const uploadFiles = async () => {
         batches.push(form.files.slice(i, i + batchSize));
     }
 
+    totalBatches.value = batches.length;
     console.log(`${batches.length} batch oluşturuldu`);
 
     try {
         let totalUploadedFiles = 0;
 
         for (const [batchIndex, batch] of batches.entries()) {
+            currentBatch.value = batchIndex + 1;
+            currentFileName.value = batch[0]?.name || '';
             console.log(`Batch #${batchIndex + 1} gönderiliyor (${batch.length} dosya)`);
 
             const batchForm = useForm({
@@ -235,6 +247,7 @@ const uploadFiles = async () => {
                     onSuccess: (successResponse) => {
                         console.log(`Batch #${batchIndex + 1} başarılı:`, successResponse);
                         totalUploadedFiles += batch.length;
+                        uploadedFiles.value = totalUploadedFiles;
                         uploadProgress.value = (totalUploadedFiles / totalFiles) * 100;
                         resolve(successResponse);
                     },
@@ -267,7 +280,6 @@ const uploadFiles = async () => {
 
         setTimeout(() => {
             isUploading.value = false;
-            uploadProgress.value = 0;
         }, 1000);
 
     } catch (error) {
@@ -286,6 +298,22 @@ const uploadFiles = async () => {
             showSuccessMessage.value = false;
         }, 3000);
     }
+};
+
+const handleProgressModalClose = () => {
+    showProgressModal.value = false;
+    uploadProgress.value = 0;
+    uploadedFiles.value = 0;
+    currentBatch.value = 0;
+    currentFileName.value = '';
+};
+
+const handleUploadCancel = () => {
+    // Cancel upload logic can be implemented here
+    isUploading.value = false;
+    showProgressModal.value = false;
+    uploadProgress.value = 0;
+    uploadedFiles.value = 0;
 };
 
 onMounted(() => {
@@ -346,7 +374,7 @@ onMounted(() => {
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Adınız *</label>
                         <input v-model="uploaderInfo.name" type="text" placeholder="Adınızı girin"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                             required />
                     </div>
                     <div>
@@ -355,7 +383,7 @@ onMounted(() => {
                             placeholder="Email adresinizi girin" :class="{
                                 'border-red-500 focus:ring-red-500': emailError,
                                 'border-gray-300 focus:ring-blue-500': !emailError
-                            }" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2" required />
+                            }" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 text-gray-900" required />
                         <p v-if="emailError" class="text-red-500 text-sm mt-1">{{ emailError }}</p>
                     </div>
                     <button @click="handleUserInfoSubmit" :disabled="!hasUserInfo"
@@ -424,8 +452,8 @@ onMounted(() => {
                                     d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
                                 </path>
                             </svg>
-                            <h2 class="text-xl font-semibold">Fotoğraf ve Video Yükle</h2>
-                            <span v-if="uploaderInfo.name" class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm">
+                            <h2 class="text-xl font-semibold text-gray-900">Fotoğraf ve Video Yükle</h2>
+                            <span v-if="uploaderInfo.name" class="bg-gray-100 text-gray-900 px-2 py-1 rounded text-sm">
                                 {{ uploaderInfo.name }}
                             </span>
                         </div>
@@ -506,17 +534,6 @@ onMounted(() => {
                             </div>
                         </div>
 
-                        <!-- Upload Progress -->
-                        <div v-if="isUploading" class="space-y-2">
-                            <div class="flex items-center justify-between text-sm">
-                                <span>Uploading...</span>
-                                <span>{{ Math.round(uploadProgress) }}%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                    :style="{ width: uploadProgress + '%' }"></div>
-                            </div>
-                        </div>
 
                         <!-- Error Messages -->
                         <div v-if="form.errors.files || Object.keys(serverFileErrors).length" class="space-y-2">
@@ -565,6 +582,20 @@ onMounted(() => {
                 </div>
             </div>
         </div>
+
+        <!-- Upload Progress Modal -->
+        <UploadProgressModal
+            :is-open="showProgressModal"
+            :upload-progress="uploadProgress"
+            :is-uploading="isUploading"
+            :current-file-name="currentFileName"
+            :total-files="form.files.length"
+            :uploaded-files="uploadedFiles"
+            :current-batch="currentBatch"
+            :total-batches="totalBatches"
+            @close="handleProgressModalClose"
+            @cancel="handleUploadCancel"
+        />
     </div>
 </template>
 
