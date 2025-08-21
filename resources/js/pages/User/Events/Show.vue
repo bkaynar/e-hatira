@@ -457,33 +457,32 @@ function downloadQRCode() {
                         <div v-for="(photo, index) in event.photos" :key="photo.id" class="relative group">
                             <div class="bg-white p-2 rounded-lg shadow cursor-pointer" @click="openLightbox(index)">
                                 <!-- En basit şekilde görüntüleme -->
-                                <img 
-                                    :src="photo.photo_url" 
-                                    :alt="photo.original_name"
-                                    style="width: 100%; display: block; margin: 0 auto;" 
+                                <img :src="photo.photo_url" :alt="photo.original_name"
+                                    style="width: 100%; display: block; margin: 0 auto;"
                                     @error="console.error('Failed to load image:', photo.photo_url)"
-                                    @load="console.log('Image loaded successfully:', photo.photo_url)"
-                                    loading="lazy"
-                                    decoding="async"
-                                />
-                                
+                                    @load="console.log('Image loaded successfully:', photo.photo_url)" loading="lazy"
+                                    decoding="async" />
+
                                 <!-- Fotoğraf bilgileri -->
                                 <div class="mt-2">
                                     <div class="flex items-center justify-between">
                                         <Badge :class="getPhotoStatusColor(photo.status)" class="text-xs">
                                             {{ photo.status }}
                                         </Badge>
-                                        <span v-if="photo.is_cover" class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                        <span v-if="photo.is_cover"
+                                            class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
                                             Cover
                                         </span>
                                     </div>
-                                    
+
                                     <p class="text-xs text-muted-foreground mt-1" :title="photo.original_name">
-                                        {{ photo.original_name.length > 20 ? photo.original_name.substring(0, 20) + '...' : photo.original_name }}
+                                        {{ photo.original_name.length > 20 ? photo.original_name.substring(0, 20) +
+                                        '...' : photo.original_name }}
                                     </p>
-                                    
+
                                     <!-- Uploader Info -->
-                                    <div v-if="photo.uploader_name || photo.uploader_email" class="bg-gray-50 p-2 rounded text-xs mt-2">
+                                    <div v-if="photo.uploader_name || photo.uploader_email"
+                                        class="bg-gray-50 p-2 rounded text-xs mt-2">
                                         <div v-if="photo.uploader_name" class="font-medium text-gray-700">
                                             👤 {{ photo.uploader_name }}
                                         </div>
@@ -491,49 +490,39 @@ function downloadQRCode() {
                                             ✉️ {{ photo.uploader_email }}
                                         </div>
                                     </div>
-                                    
+
                                     <!-- File Info -->
                                     <div class="text-xs text-gray-500 mt-2">
                                         📅 {{ formatDate(photo.created_at) }} · 📁 {{ formatFileSize(photo.file_size) }}
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <!-- Photo Actions -->
                             <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <div class="flex flex-col gap-1">
-                                    <button
-                                        v-if="photo.status === 'pending'"
-                                        @click.stop="approvePhoto(photo.id)"
+                                    <button v-if="photo.status === 'pending'" @click.stop="approvePhoto(photo.id)"
                                         class="bg-green-600 hover:bg-green-700 text-white p-1 rounded text-xs"
-                                        title="Approve"
-                                    >
+                                        title="Approve">
                                         ✓
                                     </button>
-                                    
-                                    <button
-                                        v-if="photo.status === 'pending'"
-                                        @click.stop="rejectPhoto(photo.id)"
+
+                                    <button v-if="photo.status === 'pending'" @click.stop="rejectPhoto(photo.id)"
                                         class="bg-red-600 hover:bg-red-700 text-white p-1 rounded text-xs"
-                                        title="Reject"
-                                    >
+                                        title="Reject">
                                         ✗
                                     </button>
-                                    
-                                    <button
-                                        v-if="photo.status === 'approved' && !photo.is_cover"
+
+                                    <button v-if="photo.status === 'approved' && !photo.is_cover"
                                         @click.stop="setCoverPhoto(photo.id)"
                                         class="bg-blue-600 hover:bg-blue-700 text-white p-1 rounded text-xs"
-                                        title="Set as Cover"
-                                    >
+                                        title="Set as Cover">
                                         ⭐
                                     </button>
-                                    
-                                    <button
-                                        @click.stop="deletePhoto(photo.id)"
+
+                                    <button @click.stop="deletePhoto(photo.id)"
                                         class="bg-red-600 hover:bg-red-700 text-white p-1 rounded text-xs"
-                                        title="Delete"
-                                    >
+                                        title="Delete">
                                         🗑
                                     </button>
                                 </div>
