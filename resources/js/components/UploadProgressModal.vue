@@ -1,4 +1,4 @@
-<script setup lang="ts">
+ <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 
 interface Props {
@@ -65,15 +65,15 @@ watch(() => props.uploadProgress, (newProgress) => {
           <!-- Pulsing ring for active upload -->
           <div v-if="isUploading && uploadProgress < 100" class="absolute inset-0 bg-blue-400 rounded-full animate-ping opacity-25"></div>
         </div>
-        
+
         <h3 class="text-xl font-semibold text-gray-900 mb-2">
           {{ uploadProgress === 100 ? 'Yükleme Tamamlandı!' : 'Dosyalar Yükleniyor...' }}
         </h3>
-        
+
         <p class="text-gray-600 text-sm">
           {{ getProgressText() }}
         </p>
-        
+
         <p v-if="currentFileName && uploadProgress < 100" class="text-gray-500 text-xs mt-1 truncate">
           {{ currentFileName }}
         </p>
@@ -85,9 +85,9 @@ watch(() => props.uploadProgress, (newProgress) => {
           <span class="text-gray-600">İlerleme</span>
           <span class="font-medium text-gray-900">{{ progressPercentage }}%</span>
         </div>
-        
+
         <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-          <div 
+          <div
             :class="[getProgressColor(), animationClass]"
             class="h-3 rounded-full transition-all duration-500 ease-out relative overflow-hidden"
             :style="{ width: `${uploadProgress}%` }"
@@ -110,7 +110,7 @@ watch(() => props.uploadProgress, (newProgress) => {
             <div class="text-gray-600">Toplam</div>
           </div>
         </div>
-        
+
         <div v-if="totalBatches > 1" class="mt-3 pt-3 border-t border-gray-200">
           <div class="text-center text-xs text-gray-500">
             Batch {{ currentBatch }} / {{ totalBatches }}
@@ -135,23 +135,23 @@ watch(() => props.uploadProgress, (newProgress) => {
 
       <!-- Action Buttons -->
       <div class="flex gap-3">
-        <button 
+        <button
           v-if="showCancelButton"
           @click="emit('cancel')"
           class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium"
         >
           İptal Et
         </button>
-        
-        <button 
+
+        <button
           v-if="uploadProgress === 100"
           @click="emit('close')"
           class="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm font-medium"
         >
           Tamam
         </button>
-        
-        <button 
+
+        <button
           v-else-if="!isUploading"
           @click="emit('close')"
           class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-sm font-medium"
