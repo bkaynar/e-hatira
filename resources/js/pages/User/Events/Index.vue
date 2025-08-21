@@ -98,19 +98,19 @@ function formatDate(dateString: string) {
 
 <template>
     <Head title="Events" />
-    
+
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-6">
+        <div class="space-y-6 m-6">
             <!-- Header -->
             <div class="flex justify-between items-center">
                 <div>
-                    <h1 class="text-3xl font-bold tracking-tight">Events</h1>
-                    <p class="text-muted-foreground">Manage your events and photo galleries</p>
+                    <h1 class="text-3xl font-bold tracking-tight">Etkinliklerim</h1>
+                    <p class="text-muted-foreground">Etkinliklerinizi yönetin ve paylaşın.</p>
                 </div>
-                
+
                 <Link href="/user/events/create">
                     <Button class="bg-blue-600 hover:bg-blue-700">
-                        Create Event
+                        Yeni Etkinlik Oluştur
                     </Button>
                 </Link>
             </div>
@@ -121,7 +121,7 @@ function formatDate(dateString: string) {
                     <p class="text-muted-foreground">No events found.</p>
                     <Link href="/user/events/create">
                         <Button class="mt-4 bg-blue-600 hover:bg-blue-700">
-                            Create Your First Event
+                            Yeni Etkinlik Oluştur
                         </Button>
                     </Link>
                 </div>
@@ -136,25 +136,25 @@ function formatDate(dateString: string) {
                                         {{ getStatusText(event.status) }}
                                     </Badge>
                                 </div>
-                                
+
                                 <p v-if="event.description" class="text-muted-foreground mb-3">
                                     {{ event.description }}
                                 </p>
-                                
+
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground">
                                     <div>
-                                        <strong>Location:</strong> {{ event.location }}
+                                        <strong>Konum:</strong> {{ event.location }}
                                     </div>
                                     <div>
-                                        <strong>Date:</strong> {{ formatDate(event.event_date) }}
+                                        <strong>Tarih:</strong> {{ formatDate(event.event_date) }}
                                         <span v-if="event.event_time"> at {{ event.event_time }}</span>
                                     </div>
                                     <div>
-                                        <strong>Package:</strong> {{ event.package.name }}
+                                        <strong>Paket:</strong> {{ event.package.name }}
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div v-if="event.image" class="ml-4">
                                 <img
                                     :src="`/storage/${event.image}`"
@@ -163,24 +163,24 @@ function formatDate(dateString: string) {
                                 />
                             </div>
                         </div>
-                        
+
                         <div class="flex justify-between items-center mt-6 pt-4 border-t">
                             <div class="text-sm text-muted-foreground">
-                                Created {{ formatDate(event.created_at) }}
+                                Oluşturma Tarihi: {{ formatDate(event.created_at) }}
                                 <span v-if="event.photos_count">
                                     • {{ event.photos_count }} photos
                                 </span>
                             </div>
-                            
+
                             <div class="flex gap-2">
                                 <Link :href="`/user/events/${event.id}`">
                                     <Button variant="outline" size="sm">
-                                        View
+                                        Görüntüle
                                     </Button>
                                 </Link>
                                 <Link :href="`/user/events/${event.id}/edit`">
                                     <Button variant="outline" size="sm">
-                                        Edit
+                                        Düzenle
                                     </Button>
                                 </Link>
                             </div>
@@ -198,7 +198,7 @@ function formatDate(dateString: string) {
                     >
                         <Button variant="outline">Previous</Button>
                     </Link>
-                    
+
                     <template v-for="page in events.last_page" :key="page">
                         <Link
                             v-if="Math.abs(page - events.current_page) <= 2"
@@ -211,7 +211,7 @@ function formatDate(dateString: string) {
                             </Button>
                         </Link>
                     </template>
-                    
+
                     <Link
                         v-if="events.current_page < events.last_page"
                         :href="`/user/events?page=${events.current_page + 1}`"

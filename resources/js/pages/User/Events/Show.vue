@@ -66,11 +66,11 @@ const props = defineProps<Props>();
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Kontrol Paneli',
         href: '/user/dashboard',
     },
     {
-        title: 'Events',
+        title: 'Etkinlikler',
         href: '/user/events',
     },
     {
@@ -244,7 +244,7 @@ async function copyToClipboard(text: string) {
         await navigator.clipboard.writeText(text);
         alert('URL copied to clipboard!');
     } catch (err) {
-        console.error('Failed to copy:', err);
+        console.error('Kopyalama başarısız:', err);
         // Fallback for older browsers
         const textArea = document.createElement('textarea');
         textArea.value = text;
@@ -324,7 +324,7 @@ function downloadQRCode() {
         img.src = url;
     } catch (error) {
         console.error('Failed to download QR code:', error);
-        alert('Failed to download QR code. Please try again.');
+        alert('QR kod indirilemedi. Lütfen tekrar deneyin.');
     }
 }
 </script>
@@ -360,7 +360,7 @@ function downloadQRCode() {
 
                         <div class="flex gap-2">
                             <Link :href="`/user/events/${event.id}/edit`">
-                            <Button variant="outline">Edit</Button>
+                            <Button variant="outline">Düzenle</Button>
                             </Link>
                         </div>
                     </div>
@@ -369,21 +369,21 @@ function downloadQRCode() {
                 <CardContent>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
-                            <strong class="block text-sm text-muted-foreground">Location</strong>
+                            <strong class="block text-sm text-muted-foreground">Konum</strong>
                             <p>{{ event.location }}</p>
                         </div>
                         <div>
-                            <strong class="block text-sm text-muted-foreground">Date</strong>
+                            <strong class="block text-sm text-muted-foreground">Tarih</strong>
                             <p>{{ formatDate(event.event_date) }}
                                 <span v-if="event.event_time"> at {{ event.event_time }}</span>
                             </p>
                         </div>
                         <div>
-                            <strong class="block text-sm text-muted-foreground">Package</strong>
+                            <strong class="block text-sm text-muted-foreground">Paket</strong>
                             <p>{{ event.package.name }}</p>
                         </div>
                         <div>
-                            <strong class="block text-sm text-muted-foreground">Photos</strong>
+                            <strong class="block text-sm text-muted-foreground">Fotoğraflar</strong>
                             <p>{{ event.photos.length }} uploaded</p>
                         </div>
                     </div>
@@ -400,7 +400,7 @@ function downloadQRCode() {
                                 d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z">
                             </path>
                         </svg>
-                        Guest Photo Upload
+                        Misafir Fotoğraf Yükleme
                     </CardTitle>
                 </CardHeader>
 
@@ -408,7 +408,7 @@ function downloadQRCode() {
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <!-- QR Code -->
                         <div class="text-center">
-                            <h3 class="font-medium mb-3">QR Code for Mobile Upload</h3>
+                            <h3 class="font-medium mb-3">Mobil Yükleme için QR Kod</h3>
                             <div class="bg-white p-4 rounded-lg border inline-block" v-html="event.qr_code"
                                 id="qr-code"></div>
                             <p class="text-sm text-muted-foreground mt-2 mb-3">
@@ -427,7 +427,7 @@ function downloadQRCode() {
 
                         <!-- Upload URL -->
                         <div>
-                            <h3 class="font-medium mb-3">Direct Upload Link</h3>
+                            <h3 class="font-medium mb-3">Direkt Yükleme Bağlantısı</h3>
                             <div class="space-y-3">
                                 <div class="flex gap-2">
                                     <input :value="event.upload_url" readonly
@@ -446,7 +446,7 @@ function downloadQRCode() {
                                                     d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14">
                                                 </path>
                                             </svg>
-                                            Open Upload Page
+                                            Yükleme Sayfasını Aç
                                         </Button>
                                     </a>
                                 </div>
@@ -513,7 +513,7 @@ function downloadQRCode() {
                                         </Badge>
                                         <span v-if="photo.is_cover"
                                             class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                            Cover
+                                            Kapak
                                         </span>
                                     </div>
 
@@ -545,26 +545,26 @@ function downloadQRCode() {
                                 <div class="flex flex-col gap-1">
                                     <button v-if="photo.status === 'pending'" @click.stop="approvePhoto(photo.id)"
                                         class="bg-green-600 hover:bg-green-700 text-white p-1 rounded text-xs"
-                                        title="Approve">
+                                        title="Onayla">
                                         ✓
                                     </button>
 
                                     <button v-if="photo.status === 'pending'" @click.stop="rejectPhoto(photo.id)"
                                         class="bg-red-600 hover:bg-red-700 text-white p-1 rounded text-xs"
-                                        title="Reject">
+                                        title="Reddet">
                                         ✗
                                     </button>
 
                                     <button v-if="photo.status === 'approved' && !photo.is_cover"
                                         @click.stop="setCoverPhoto(photo.id)"
                                         class="bg-blue-600 hover:bg-blue-700 text-white p-1 rounded text-xs"
-                                        title="Set as Cover">
+                                        title="Kapak Yap">
                                         ⭐
                                     </button>
 
                                     <button @click.stop="deletePhoto(photo.id)"
                                         class="bg-red-600 hover:bg-red-700 text-white p-1 rounded text-xs"
-                                        title="Delete">
+                                        title="Sil">
                                         🗑
                                     </button>
                                 </div>
@@ -575,7 +575,7 @@ function downloadQRCode() {
             </Card>
 
             <div v-else class="text-center py-8 text-muted-foreground">
-                <p>No photos uploaded yet.</p>
+                <p>Henüz fotoğraf yüklenmemiş.</p>
             </div>
         </div>
 

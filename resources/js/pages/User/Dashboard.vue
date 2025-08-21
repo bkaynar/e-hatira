@@ -31,44 +31,44 @@ const featureDiscoveryRef = ref<{ startTour: () => void } | null>(null);
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Kontrol Paneli',
         href: '/user/dashboard',
     },
 ];
 
 // Stats configuration with real data
 const statsConfig = computed(() => [
-    { label: 'Total Events', value: stats.total_events || 0, icon: Calendar, color: 'text-blue-600', bgColor: 'bg-blue-100' },
-    { label: 'Photos Uploaded', value: stats.total_photos || 0, icon: Camera, color: 'text-green-600', bgColor: 'bg-green-100' },
-    { label: 'Approved Photos', value: stats.approved_photos || 0, icon: Check, color: 'text-purple-600', bgColor: 'bg-purple-100' },
-    { label: 'Pending Photos', value: stats.pending_photos || 0, icon: Clock, color: 'text-orange-600', bgColor: 'bg-orange-100' }
+    { label: 'Toplam Etkinlik', value: stats.total_events || 0, icon: Calendar, color: 'text-blue-600', bgColor: 'bg-blue-100' },
+    { label: 'Yüklenmiş Fotoğraf', value: stats.total_photos || 0, icon: Camera, color: 'text-green-600', bgColor: 'bg-green-100' },
+    { label: 'Onaylanmış Fotoğraf', value: stats.approved_photos || 0, icon: Check, color: 'text-purple-600', bgColor: 'bg-purple-100' },
+    { label: 'Bekleyen Fotoğraf', value: stats.pending_photos || 0, icon: Clock, color: 'text-orange-600', bgColor: 'bg-orange-100' }
 ]);
 
 const quickActions = [
-    { title: 'Upload Photos', desc: 'Add new photos to your events', icon: Upload, action: 'upload', href: route('user.events.index') },
-    { title: 'Create Event', desc: 'Start a new photo collection', icon: Plus, action: 'create', href: route('user.events.create') },
-    { title: 'Share Gallery', desc: 'Share your photos with others', icon: Share2, action: 'share', href: route('user.events.index') }
+    { title: 'Fotoğraf Yükle', desc: 'Etkinliklerinize yeni fotoğraflar ekleyin', icon: Upload, action: 'upload', href: route('user.events.index') },
+    { title: 'Etkinlik Oluştur', desc: 'Yeni bir fotoğraf koleksiyonu başlatın', icon: Plus, action: 'create', href: route('user.events.create') },
+    { title: 'Galeri Paylaş', desc: 'Fotoğraflarınızı başkalarıyla paylaşın', icon: Share2, action: 'share', href: route('user.events.index') }
 ];
 
 const featureDiscoverySteps = [
     {
         element: '[data-intro="dashboard"]',
-        intro: "Welcome to your dashboard! This is your control center where you can see all your event statistics and recent activity.",
+        intro: "Kontrol panelinize hoş geldiniz! Buradan tüm etkinlik istatistiklerinizi ve son aktivitelerinizi görebilirsiniz.",
         position: 'bottom'
     },
     {
         element: '[data-intro="events"]',
-        intro: "Here you can view and manage all your events. This is where your event memories live!",
+        intro: "Buradan tüm etkinliklerinizi görebilir ve yönetebilirsiniz. Etkinlik anılarınız burada yaşar!",
         position: 'right'
     },
     {
         element: '[data-intro="quick-actions"]',
-        intro: "Use these quick actions to upload photos, create new events, or share your galleries with others.",
+        intro: "Bu hızlı işlemlerle fotoğraf yükleyebilir, yeni etkinlik oluşturabilir veya galerilerinizi paylaşabilirsiniz.",
         position: 'left'
     },
     {
         element: '[data-intro="profile"]',
-        intro: "Access your profile settings and account preferences from the top navigation.",
+        intro: "Üst menüden profil ayarlarınıza ve hesap tercihlerinize erişebilirsiniz.",
         position: 'bottom'
     }
 ];
@@ -83,7 +83,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head title="Dashboard" />
+    <Head title="Kontrol Paneli" />
 
     <AppHeaderLayout :breadcrumbs="breadcrumbs">
         <!-- Feature Discovery Component -->
@@ -99,15 +99,15 @@ onMounted(() => {
             rounded-2xl p-8 mb-8" data-intro="dashboard">            <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                        Welcome back, {{ user?.name || 'User' }}! 👋
+                        Hoş geldin, {{ user?.name || 'Kullanıcı' }}! 👋
                     </h1>
                     <p class="text-lg text-gray-600 dark:text-gray-300 mb-6">
-                        {{ stats.total_events > 0 ? `You have ${stats.total_events} event${stats.total_events > 1 ? 's' : ''} with ${stats.total_photos} photos!` : 'Ready to capture and share your moments?' }}
+                        {{ stats.total_events > 0 ? `Toplam ${stats.total_events} etkinliğiniz ve ${stats.total_photos} fotoğrafınız var!` : 'Anılarınızı yakalamaya ve paylaşmaya hazır mısınız?' }}
                     </p>
                     <Link :href="route('user.events.create')">
                         <Button class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 inline-flex items-center gap-2">
                             <Plus class="h-5 w-5" />
-                            {{ stats.total_events > 0 ? 'Create New Event' : 'Create Your First Event' }}
+                            {{ stats.total_events > 0 ? 'Yeni Etkinlik Oluştur' : 'İlk Etkinliğinizi Oluşturun' }}
                         </Button>
                     </Link>
                 </div>
@@ -149,7 +149,7 @@ onMounted(() => {
                     <CardHeader>
                         <CardTitle class="flex items-center gap-2">
                             <Calendar class="h-5 w-5 text-blue-600" />
-                            Recent Events
+                            Son Etkinlikler
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -203,7 +203,7 @@ onMounted(() => {
                         <div class="mt-6">
                             <Link :href="route('user.events.index')">
                                 <Button class="w-full" variant="outline">
-                                    View All Events
+                                    Tüm Etkinlikleri Görüntüle
                                 </Button>
                             </Link>
                         </div>
@@ -218,7 +218,7 @@ onMounted(() => {
                     <CardHeader>
                         <CardTitle class="flex items-center gap-2">
                             <TrendingUp class="h-5 w-5 text-green-600" />
-                            Quick Actions
+                           Hızlı İşlemler
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -242,41 +242,6 @@ onMounted(() => {
                         </div>
                     </CardContent>
                 </Card>
-
-                <!-- Recent Activity -->
-                <Card>
-                    <CardHeader>
-                        <CardTitle class="flex items-center gap-2">
-                            <Clock class="h-5 w-5 text-orange-600" />
-                            Recent Activity
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div class="space-y-4 text-sm">
-                            <div class="flex items-start gap-3">
-                                <div class="h-2 w-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                                <div>
-                                    <p class="text-gray-900 dark:text-white">New photos uploaded</p>
-                                    <p class="text-gray-500 text-xs">2 hours ago</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start gap-3">
-                                <div class="h-2 w-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                                <div>
-                                    <p class="text-gray-900 dark:text-white">Event shared with guests</p>
-                                    <p class="text-gray-500 text-xs">5 hours ago</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start gap-3">
-                                <div class="h-2 w-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-                                <div>
-                                    <p class="text-gray-900 dark:text-white">Received 12 new likes</p>
-                                    <p class="text-gray-500 text-xs">1 day ago</p>
-                                </div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
             </div>
         </div>
 
@@ -286,10 +251,10 @@ onMounted(() => {
                 <CardContent class="p-8">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h3 class="text-2xl font-bold mb-2">Upgrade to Pro</h3>
-                            <p class="text-indigo-100 mb-4">Get unlimited uploads, premium features, and priority support.</p>
+                            <h3 class="text-2xl font-bold mb-2">Pro'ya Geçiş Yap</h3>
+                            <p class="text-indigo-100 mb-4">Sınırsız yükleme, premium özellikler ve öncelikli destek alın.</p>
                             <Button variant="secondary" class="bg-white text-indigo-600 hover:bg-gray-100">
-                                View Plans
+                                Planları Görüntüle
                             </Button>
                         </div>
                         <div class="hidden md:block">

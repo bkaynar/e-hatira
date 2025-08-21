@@ -50,7 +50,7 @@ class PackageController extends Controller
         Package::create($validated);
 
         return redirect()->route('admin.packages.index')
-            ->with('success', 'Package created successfully.');
+            ->with('success', 'Paket başarıyla oluşturuldu.');
     }
 
     /**
@@ -95,7 +95,7 @@ class PackageController extends Controller
         $package->update($validated);
 
         return redirect()->route('admin.packages.index')
-            ->with('success', 'Package updated successfully.');
+            ->with('success', 'Paket başarıyla güncellendi.');
     }
 
     /**
@@ -106,6 +106,6 @@ class PackageController extends Controller
         $package->delete();
 
         return redirect()->route('admin.packages.index')
-            ->with('success', 'Package deleted successfully.');
+            ->with('success', 'Paket başarıyla silindi.');
     }
 }

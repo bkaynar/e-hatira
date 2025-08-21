@@ -54,11 +54,11 @@ const props = defineProps<Props>();
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Kontrol Paneli',
         href: '/user/dashboard',
     },
     {
-        title: 'Events',
+        title: 'Etkinlikler',
         href: '/user/events',
     },
     {
@@ -66,7 +66,7 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: `/user/events/${props.event.id}`,
     },
     {
-        title: 'Edit',
+        title: 'Düzenle',
         href: `/user/events/${props.event.id}/edit`,
     },
 ];
@@ -92,13 +92,13 @@ function submitForm() {
             // Success message will be handled by the controller
         },
         onError: (errors) => {
-            console.error('Form errors:', errors);
+            console.error('Form hataları:', errors);
         }
     });
 }
 
 function deleteEvent() {
-    if (confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+    if (confirm('Bu etkinliği silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
         const deleteForm = useForm({});
         deleteForm.delete(`/user/events/${props.event.id}`);
     }
@@ -113,13 +113,13 @@ function deleteEvent() {
             <Card>
                 <CardHeader>
                     <div class="flex justify-between items-center">
-                        <CardTitle>Edit Event</CardTitle>
+                        <CardTitle>Etkinliği Düzenle</CardTitle>
                         <Button
                             variant="destructive"
                             @click="deleteEvent"
                             class="bg-red-600 hover:bg-red-700"
                         >
-                            Delete Event
+                            Etkinliği Sil
                         </Button>
                     </div>
                 </CardHeader>
@@ -128,7 +128,7 @@ function deleteEvent() {
                     <form @submit.prevent="submitForm" class="space-y-6">
                         <!-- Event Name -->
                         <div class="space-y-2">
-                            <Label for="name">Event Name</Label>
+                            <Label for="name">Etkinlik Adı</Label>
                             <Input
                                 id="name"
                                 v-model="form.name"
@@ -143,7 +143,7 @@ function deleteEvent() {
 
                         <!-- Description -->
                         <div class="space-y-2">
-                            <Label for="description">Description</Label>
+                            <Label for="description">Açıklama</Label>
                             <textarea
                                 id="description"
                                 v-model="form.description"
@@ -158,7 +158,7 @@ function deleteEvent() {
 
                         <!-- Location -->
                         <div class="space-y-2">
-                            <Label for="location">Location</Label>
+                            <Label for="location">Konum</Label>
                             <Input
                                 id="location"
                                 v-model="form.location"
@@ -174,7 +174,7 @@ function deleteEvent() {
                         <!-- Date and Time -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="space-y-2">
-                                <Label for="event_date">Event Date</Label>
+                                <Label for="event_date">Etkinlik Tarihi</Label>
                                 <Input
                                     id="event_date"
                                     v-model="form.event_date"
@@ -188,7 +188,7 @@ function deleteEvent() {
                             </div>
 
                             <div class="space-y-2">
-                                <Label for="event_time">Event Time (Optional)</Label>
+                                <Label for="event_time">Etkinlik Saati (Opsiyonel)</Label>
                                 <Input
                                     id="event_time"
                                     v-model="form.event_time"
@@ -203,7 +203,7 @@ function deleteEvent() {
 
                         <!-- Package Selection -->
                         <div class="space-y-2">
-                            <Label for="package_id">Package</Label>
+                            <Label for="package_id">Paket</Label>
                             <select
                                 id="package_id"
                                 v-model="form.package_id"
@@ -211,14 +211,14 @@ function deleteEvent() {
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 :class="{ 'border-red-500': form.errors.package_id }"
                             >
-                                <option value="">Select a package...</option>
+                                <option value="">Bir paket seçin...</option>
                                 <option
                                     v-for="pkg in packages"
                                     :key="pkg.id"
                                     :value="pkg.id"
                                 >
                                     {{ pkg.name }} - {{ pkg.price }} {{ pkg.currency }}
-                                    ({{ pkg.max_uploads ? pkg.max_uploads + ' uploads' : 'Unlimited' }})
+                                    ({{ pkg.max_uploads ? pkg.max_uploads + ' yükleme' : 'Sınırsız' }})
                                 </option>
                             </select>
                             <div v-if="form.errors.package_id" class="text-red-500 text-sm">
@@ -228,7 +228,7 @@ function deleteEvent() {
 
                         <!-- Status -->
                         <div class="space-y-2">
-                            <Label for="status">Status</Label>
+                            <Label for="status">Durum</Label>
                             <select
                                 id="status"
                                 v-model="form.status"
@@ -236,9 +236,9 @@ function deleteEvent() {
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 :class="{ 'border-red-500': form.errors.status }"
                             >
-                                <option value="draft">Draft</option>
-                                <option value="published">Published</option>
-                                <option value="cancelled">Cancelled</option>
+                                <option value="draft">Taslak</option>
+                                <option value="published">Yayınlandı</option>
+                                <option value="cancelled">İptal Edildi</option>
                             </select>
                             <div v-if="form.errors.status" class="text-red-500 text-sm">
                                 {{ form.errors.status }}
@@ -247,7 +247,7 @@ function deleteEvent() {
 
                         <!-- Current Image -->
                         <div v-if="event.image" class="space-y-2">
-                            <Label>Current Cover Image</Label>
+                            <Label>Mevcut Kapak Görseli</Label>
                             <div>
                                 <img
                                     :src="`/storage/${event.image}`"
@@ -260,7 +260,7 @@ function deleteEvent() {
                         <!-- New Cover Image -->
                         <div class="space-y-2">
                             <Label for="image">
-                                {{ event.image ? 'Replace Cover Image (Optional)' : 'Cover Image (Optional)' }}
+                                {{ event.image ? 'Kapak Görselini Değiştir (Opsiyonel)' : 'Kapak Görseli (Opsiyonel)' }}
                             </Label>
                             <input
                                 id="image"
@@ -282,7 +282,7 @@ function deleteEvent() {
                                 variant="outline"
                                 @click="$inertia.visit(`/user/events/${event.id}`)"
                             >
-                                Cancel
+                                İptal
                             </Button>
                             
                             <Button
@@ -290,8 +290,8 @@ function deleteEvent() {
                                 :disabled="form.processing"
                                 class="bg-blue-600 hover:bg-blue-700"
                             >
-                                <span v-if="form.processing">Updating...</span>
-                                <span v-else>Update Event</span>
+                                <span v-if="form.processing">Güncelleniyor...</span>
+                                <span v-else>Etkinliği Güncelle</span>
                             </Button>
                         </div>
                     </form>

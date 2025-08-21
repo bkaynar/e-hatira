@@ -83,7 +83,7 @@ class OnboardingController extends Controller
             ]
         ]);
 
-        return redirect()->route('dashboard')->with('success', 'Welcome to EventPhoto! Your onboarding is complete.');
+        return redirect()->route('dashboard')->with('success', 'EventPhoto\'ya hoş geldiniz! Kurulum tamamlandı.');
     }
 
     public function skip()

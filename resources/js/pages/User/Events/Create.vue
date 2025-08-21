@@ -120,7 +120,7 @@ function submitForm() {
                 </div>
                 <div>
                     <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-                        Create New Event
+                        Yeni Etkinlik Oluştur
                     </h1>
                     <p class="text-gray-600 dark:text-gray-300 mt-1">
                         Set up your photo event and start collecting memories

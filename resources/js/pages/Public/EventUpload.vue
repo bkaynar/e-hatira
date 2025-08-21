@@ -297,7 +297,7 @@ onMounted(() => {
 
 <template>
 
-    <Head :title="`Upload to ${event.name}`" />
+    <Head :title="`${event.name}`" />
 
     <div class="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100">
         <!-- Success/Error Alert -->

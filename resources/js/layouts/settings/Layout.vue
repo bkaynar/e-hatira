@@ -11,11 +11,11 @@ const sidebarNavItems: NavItem[] = [
         href: '/settings/profile',
     },
     {
-        title: 'Password',
+        title: 'Şifre Değiştir',
         href: '/settings/password',
     },
     {
-        title: 'Appearance',
+        title: 'Arayüz Yönetimi',
         href: '/settings/appearance',
     },
 ];
