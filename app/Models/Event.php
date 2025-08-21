@@ -29,6 +29,13 @@ class Event extends Model
         'is_active' => 'boolean',
     ];
 
+    protected $appends = ['event_date_formatted'];
+
+    public function getEventDateFormattedAttribute()
+    {
+        return $this->event_date ? $this->event_date->format('Y-m-d') : null;
+    }
+
     protected static function boot()
     {
         parent::boot();

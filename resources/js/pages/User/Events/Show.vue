@@ -336,19 +336,26 @@ function downloadQRCode() {
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6">
             <!-- Event Details -->
-            <Card>
+            <Card class="p-6 m-6">
                 <CardHeader>
                     <div class="flex justify-between items-start">
-                        <div>
-                            <div class="flex items-center gap-3 mb-2">
-                                <CardTitle class="text-2xl">{{ event.name }}</CardTitle>
-                                <Badge :class="getStatusColor(event.status)">
-                                    {{ event.status }}
-                                </Badge>
+                        <div class="flex gap-4">
+                            <!-- Event Avatar -->
+                            <div v-if="event.image" class="flex-shrink-0">
+                                <img :src="`/storage/${event.image}`" :alt="event.name"
+                                     class="w-16 h-16 rounded-xl object-cover shadow-md border-2 border-white" />
                             </div>
-                            <p v-if="event.description" class="text-muted-foreground">
-                                {{ event.description }}
-                            </p>
+                            <div>
+                                <div class="flex items-center gap-3 mb-2">
+                                    <CardTitle class="text-2xl">{{ event.name }}</CardTitle>
+                                    <Badge :class="getStatusColor(event.status)">
+                                        {{ event.status }}
+                                    </Badge>
+                                </div>
+                                <p v-if="event.description" class="text-muted-foreground">
+                                    {{ event.description }}
+                                </p>
+                            </div>
                         </div>
 
                         <div class="flex gap-2">
@@ -381,14 +388,11 @@ function downloadQRCode() {
                         </div>
                     </div>
 
-                    <div v-if="event.image" class="mt-4">
-                        <img :src="`/storage/${event.image}`" :alt="event.name" class="max-w-sm rounded-lg shadow-sm" />
-                    </div>
                 </CardContent>
             </Card>
 
             <!-- Guest Upload Section -->
-            <Card v-if="event.status === 'published'">
+            <Card v-if="event.status === 'published'" class="p-6 m-6">
                 <CardHeader>
                     <CardTitle class="flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -457,52 +461,10 @@ function downloadQRCode() {
             </Card>
 
             <!-- Upload Photos -->
-            <Card>
-                <CardHeader>
-                    <CardTitle>Upload Photos</CardTitle>
-                </CardHeader>
 
-                <CardContent>
-                    <form @submit.prevent="uploadPhotos" class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium mb-2">Uploader Name (Optional)</label>
-                                <input v-model="uploadForm.uploader_name" type="text"
-                                    class="w-full px-3 py-2 border rounded-md" />
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium mb-2">Uploader Email (Optional)</label>
-                                <input v-model="uploadForm.uploader_email" type="email"
-                                    class="w-full px-3 py-2 border rounded-md" />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium mb-2">Select Photos (Max 10)</label>
-                            <input id="photos" type="file" multiple accept="image/*" @change="handleFileSelect"
-                                class="w-full px-3 py-2 border rounded-md" />
-                        </div>
-
-                        <div v-if="selectedFiles.length > 0" class="space-y-2">
-                            <p class="text-sm text-muted-foreground">Selected Files:</p>
-                            <ul class="text-sm">
-                                <li v-for="file in selectedFiles" :key="file.name">
-                                    {{ file.name }} ({{ formatFileSize(file.size) }})
-                                </li>
-                            </ul>
-                        </div>
-
-                        <Button type="submit" :disabled="uploadForm.processing || selectedFiles.length === 0"
-                            class="bg-blue-600 hover:bg-blue-700">
-                            <span v-if="uploadForm.processing">Uploading...</span>
-                            <span v-else>Upload Photos</span>
-                        </Button>
-                    </form>
-                </CardContent>
-            </Card>
 
             <!-- Photos Gallery -->
-            <Card v-if="event.photos.length > 0">
+            <Card v-if="event.photos.length > 0" class="p-6 m-6">
                 <CardHeader>
                     <div class="flex justify-between items-center">
                         <CardTitle>Photo Gallery ({{ event.photos.length }})</CardTitle>
@@ -521,7 +483,7 @@ function downloadQRCode() {
                             <a :href="`/user/events/${event.id}/photos/download-all`" target="_blank">
                                 <Button variant="outline" size="sm" class="inline-flex items-center gap-2">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                               d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
                                         </path>
                                     </svg>

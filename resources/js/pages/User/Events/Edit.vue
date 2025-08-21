@@ -35,6 +35,7 @@ interface Event {
     description?: string;
     location: string;
     event_date: string;
+    event_date_formatted: string;
     event_time?: string;
     image?: string;
     status: 'draft' | 'published' | 'cancelled';
@@ -74,7 +75,7 @@ const form = useForm({
     name: props.event.name,
     description: props.event.description || '',
     location: props.event.location,
-    event_date: props.event.event_date,
+    event_date: props.event.event_date_formatted,
     event_time: props.event.event_time || '',
     package_id: props.event.package_id,
     status: props.event.status,
@@ -82,9 +83,11 @@ const form = useForm({
 });
 
 function submitForm() {
-    form.post(`/user/events/${props.event.id}`, {
+    form.transform((data) => ({
+        ...data,
+        _method: 'PUT'
+    })).post(`/user/events/${props.event.id}`, {
         forceFormData: true,
-        _method: 'PUT',
         onSuccess: () => {
             // Success message will be handled by the controller
         },
