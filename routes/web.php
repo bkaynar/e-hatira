@@ -15,7 +15,9 @@ Route::get('/', function () {
 
 // Public event photo upload
 Route::get('events/{eventSlug}', [EventPhotoController::class, 'publicUploadPage'])->name('events.public.upload.page');
-Route::post('events/{eventSlug}/upload', [EventPhotoController::class, 'publicUpload'])->name('events.public.upload');
+Route::post('events/{eventSlug}/upload', [EventPhotoController::class, 'publicUpload'])
+    ->middleware('throttle:30,1')
+    ->name('events.public.upload');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {

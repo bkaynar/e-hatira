@@ -11,6 +11,7 @@ use Inertia\Inertia;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use ZipArchive;
+use App\Jobs\ProcessEventPhoto;
 
 class EventPhotoController extends Controller
 {
@@ -242,15 +243,28 @@ class EventPhotoController extends Controller
 
     public function publicUpload(Request $request, $eventSlug)
     {
+        // Memory limit artır
+        ini_set('memory_limit', '512M');
+        
         $event = Event::where('slug', $eventSlug)
             ->where('status', 'published')
             ->firstOrFail();
+
+        // Etkinlik başına toplam dosya limiti kontrolü
+        $currentCount = EventPhoto::where('event_id', $event->id)->count();
+        $newFileCount = count($request->file('files', []));
+        
+        if ($currentCount + $newFileCount > 1000) {
+            return back()->withErrors([
+                'files' => 'Bu etkinliğe daha fazla dosya yüklenemez. (Maksimum: 1000 dosya)'
+            ]);
+        }
 
         // FRONTEND Limitleri ile uyum:
         // Görsel max ~15MB, Video max ~250MB
         // Laravel 'max' KB cinsinden: 250MB ~= 256000KB
         $request->validate([
-            'files' => 'required|array|max:20',
+            'files' => 'required|array|max:5',
             // Geniş mime listesi + yüksek üst sınır (video sınırına göre). Detaylı ayrımı aşağıda manuel yapıyoruz.
             'files.*' => 'file|mimetypes:image/jpeg,image/png,image/jpg,image/gif,image/webp,image/heic,image/heif,video/mp4,video/quicktime,video/mov,video/avi,video/x-msvideo,video/wmv,video/x-ms-wmv|max:256000',
             'uploader_name' => 'required|string|max:255',
@@ -288,13 +302,8 @@ class EventPhotoController extends Controller
                 $index
             );
 
+            // HEIC dönüştürmeyi job'a bırak, şimdilik orijinal path'i kaydet
             $finalPath = $path;
-            if (preg_match('/\.(heic|heif)$/i', $path)) {
-                $converted = $this->convertHeicToJpeg($path);
-                if ($converted) {
-                    $finalPath = $converted;
-                }
-            }
 
             $eventPhoto = EventPhoto::create([
                 'event_id' => $event->id,
@@ -306,8 +315,11 @@ class EventPhotoController extends Controller
                 'uploader_name' => $request->uploader_name,
                 'uploader_email' => $request->uploader_email,
                 'uploader_ip' => $request->ip(),
-                'status' => 'pending',
+                'status' => 'processing',
             ]);
+
+            // Background job'a gönder
+            ProcessEventPhoto::dispatch($eventPhoto);
 
             $uploadedFiles[] = $eventPhoto;
         }

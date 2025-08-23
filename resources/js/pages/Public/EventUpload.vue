@@ -185,6 +185,12 @@ const addFiles = async (newFiles: File[]) => {
             continue;
         }
 
+        // Ekstra büyük dosyaları uyar (10MB+ için görsel, 100MB+ için video)
+        const warnSize = isImage ? 10 * 1024 * 1024 : 100 * 1024 * 1024;
+        if (file.size > warnSize) {
+            console.warn(`Büyük dosya tespit edildi: ${file.name} - ${formatBytes(file.size)}`);
+        }
+
         // Aynı isim & boyutlu dosyayı tekrar eklemeyi engelle (isteğe bağlı)
         const duplicate = filePreviews.value.some(p => p.file.name === file.name && p.file.size === file.size);
         if (duplicate) {
@@ -221,7 +227,7 @@ const uploadFiles = async () => {
         console.log(`Dosya #${idx + 1}: ${file.name}, tip: ${file.type}, boyut: ${formatBytes(file.size)}`);
     });
 
-    const batchSize = 20; // Must match controller max:20
+    const batchSize = 5; // Reduced batch size for faster processing
     const totalFiles = form.files.length;
     const batches = [];
 
