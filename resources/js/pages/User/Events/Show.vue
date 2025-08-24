@@ -292,7 +292,7 @@ function bulkDeletePhotos() {
                 photo_ids: Array.from(selectedPhotos.value)
             });
             
-            form.delete(`/user/events/${props.event.id}/photos/bulk-delete`, {
+            form.post(`/user/events/${props.event.id}/photos/bulk-delete`, {
                 preserveState: true,
                 preserveScroll: true,
                 onSuccess: (page) => {
