@@ -109,6 +109,39 @@ class EventPhotoController extends Controller
         return back()->with('success', 'Fotoğraf silindi!');
     }
 
+    public function bulkDestroy(Request $request, Event $event)
+    {
+        \Log::info('Bulk destroy called', ['event_id' => $event->id, 'user_id' => auth()->id()]);
+        
+        $this->authorize('update', $event);
+
+        $request->validate([
+            'photo_ids' => 'required|array|min:1',
+            'photo_ids.*' => 'required|integer|exists:event_photos,id',
+        ]);
+
+        $photos = EventPhoto::whereIn('id', $request->photo_ids)
+            ->where('event_id', $event->id)
+            ->get();
+
+        if ($photos->isEmpty()) {
+            return back()->withErrors(['photos' => 'Silinecek fotoğraf bulunamadı.']);
+        }
+
+        $deletedCount = 0;
+        foreach ($photos as $photo) {
+            // Storage'dan dosyayı sil
+            if (Storage::disk('public')->exists($photo->photo_path)) {
+                Storage::disk('public')->delete($photo->photo_path);
+            }
+            
+            $photo->delete();
+            $deletedCount++;
+        }
+
+        return back()->with('success', $deletedCount . ' fotoğraf başarıyla silindi!');
+    }
+
     public function updateOrder(Request $request, Event $event)
     {
         $this->authorize('update', $event);

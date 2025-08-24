@@ -5,7 +5,7 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import VueEasyLightbox from 'vue-easy-lightbox';
 import Swal from 'sweetalert2';
 
@@ -86,11 +86,15 @@ const uploadForm = useForm({
 });
 
 const selectedFiles = ref<File[]>([]);
+const selectedPhotos = ref<Set<number>>(new Set());
+const isSelectMode = ref(false);
 
 // Lightbox için
 const showLightbox = ref(false);
 const lightboxIndex = ref(0);
 const lightboxImages = ref<string[]>([]);
+const lightboxVideos = ref<string[]>([]);
+const lightboxTypes = ref<('image' | 'video')[]>([]);
 const imageLoadStatus = ref<Record<string, boolean>>({});
 
 function getStatusColor(status: string) {
@@ -239,6 +243,76 @@ function formatFileSize(bytes: number) {
     return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
 }
 
+function isVideo(mimeType: string) {
+    return mimeType.startsWith('video/');
+}
+
+const selectedCount = computed(() => selectedPhotos.value.size);
+
+function toggleSelectMode() {
+    isSelectMode.value = !isSelectMode.value;
+    if (!isSelectMode.value) {
+        selectedPhotos.value.clear();
+    }
+}
+
+function togglePhotoSelection(photoId: number) {
+    if (selectedPhotos.value.has(photoId)) {
+        selectedPhotos.value.delete(photoId);
+    } else {
+        selectedPhotos.value.add(photoId);
+    }
+}
+
+function selectAllPhotos() {
+    event.photos.forEach(photo => {
+        selectedPhotos.value.add(photo.id);
+    });
+}
+
+function clearSelection() {
+    selectedPhotos.value.clear();
+}
+
+function bulkDeletePhotos() {
+    if (selectedPhotos.value.size === 0) return;
+    
+    Swal.fire({
+        title: 'Emin misiniz?',
+        text: `${selectedCount.value} fotoğrafı silmek istediğinizden emin misiniz?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Evet, sil!',
+        cancelButtonText: 'İptal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const form = useForm({
+                photo_ids: Array.from(selectedPhotos.value)
+            });
+            
+            form.delete(`/user/events/${props.event.id}/photos/bulk-delete`, {
+                preserveState: true,
+                preserveScroll: true,
+                onSuccess: (page) => {
+                    selectedPhotos.value.clear();
+                    isSelectMode.value = false;
+                    if (page.props.flash?.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Başarılı!',
+                            text: page.props.flash.success,
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    }
+                }
+            });
+        }
+    });
+}
+
 async function copyToClipboard(text: string) {
     try {
         await navigator.clipboard.writeText(text);
@@ -257,17 +331,37 @@ async function copyToClipboard(text: string) {
 }
 
 function openLightbox(photoIndex: number) {
-    // Tüm fotoğrafları lightbox'a ekle
-    const photoUrls = props.event.photos.map(photo => photo.photo_url);
-
-    // Debug için URL'leri console'a yazdır
-    console.log('Lightbox URLs:', photoUrls);
+    const photo = props.event.photos[photoIndex];
+    
+    if (isVideo(photo.mime_type)) {
+        // Video için modal aç
+        openVideoModal(photo.photo_url);
+        return;
+    }
+    
+    // Sadece resimleri lightbox'a ekle
+    const imagePhotos = props.event.photos.filter(p => !isVideo(p.mime_type));
+    const photoUrls = imagePhotos.map(photo => photo.photo_url);
+    
+    // Tıklanan fotoğrafın image listesindeki index'ini bul
+    const imageIndex = imagePhotos.findIndex(p => p.id === photo.id);
 
     lightboxImages.value = photoUrls;
-
-    // Tıklanan fotoğrafın index'ini direkt kullan
-    lightboxIndex.value = photoIndex;
+    lightboxIndex.value = imageIndex;
     showLightbox.value = true;
+}
+
+const showVideoModal = ref(false);
+const currentVideoUrl = ref('');
+
+function openVideoModal(videoUrl: string) {
+    currentVideoUrl.value = videoUrl;
+    showVideoModal.value = true;
+}
+
+function closeVideoModal() {
+    showVideoModal.value = false;
+    currentVideoUrl.value = '';
 }
 
 function downloadQRCode() {
@@ -469,6 +563,28 @@ function downloadQRCode() {
                     <div class="flex justify-between items-center">
                         <CardTitle>Photo Gallery ({{ event.photos.length }})</CardTitle>
                         <div class="flex items-center gap-4">
+                            <!-- Bulk Select Controls -->
+                            <div v-if="!isSelectMode" class="flex items-center gap-2">
+                                <Button @click="toggleSelectMode" variant="outline" size="sm">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    Toplu Seç
+                                </Button>
+                            </div>
+                            
+                            <div v-if="isSelectMode" class="flex items-center gap-2">
+                                <span class="text-sm text-gray-600">{{ selectedCount }} seçili</span>
+                                <Button @click="selectAllPhotos" variant="outline" size="sm">Tümü</Button>
+                                <Button @click="clearSelection" variant="outline" size="sm">Temizle</Button>
+                                <Button @click="bulkDeletePhotos" variant="destructive" size="sm" :disabled="selectedCount === 0">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                    Sil ({{ selectedCount }})
+                                </Button>
+                                <Button @click="toggleSelectMode" variant="outline" size="sm">İptal</Button>
+                            </div>
                             <div class="flex gap-2 text-sm">
                                 <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
                                     {{event.photos.filter(p => p.status === 'pending').length}} Pending
@@ -497,9 +613,37 @@ function downloadQRCode() {
                 <CardContent>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         <div v-for="(photo, index) in event.photos" :key="photo.id" class="relative group">
-                            <div class="bg-white p-2 rounded-lg shadow cursor-pointer" @click="openLightbox(index)">
-                                <!-- En basit şekilde görüntüleme -->
-                                <img :src="photo.photo_url" :alt="photo.original_name"
+                            <!-- Bulk Select Checkbox -->
+                            <div v-if="isSelectMode" class="absolute top-2 left-2 z-10">
+                                <input 
+                                    type="checkbox" 
+                                    :checked="selectedPhotos.has(photo.id)"
+                                    @change="togglePhotoSelection(photo.id)"
+                                    class="w-5 h-5 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                                >
+                            </div>
+                            
+                            <div class="bg-white p-2 rounded-lg shadow cursor-pointer" 
+                                 @click="isSelectMode ? togglePhotoSelection(photo.id) : openLightbox(index)"
+                                 :class="{'ring-2 ring-blue-500': isSelectMode && selectedPhotos.has(photo.id)}">
+                                <!-- Video görüntüleme -->
+                                <div v-if="isVideo(photo.mime_type)" class="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                                    <video class="w-full h-full object-cover" :src="photo.photo_url" preload="metadata">
+                                        <source :src="photo.photo_url" :type="photo.mime_type">
+                                        Video oynatılamıyor.
+                                    </video>
+                                    <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 hover:bg-opacity-30 transition-all">
+                                        <svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="absolute top-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs">
+                                        VIDEO
+                                    </div>
+                                </div>
+                                
+                                <!-- Resim görüntüleme -->
+                                <img v-else :src="photo.photo_url" :alt="photo.original_name"
                                     style="width: 100%; display: block; margin: 0 auto;"
                                     @error="console.error('Failed to load image:', photo.photo_url)"
                                     @load="console.log('Image loaded successfully:', photo.photo_url)" loading="lazy"
@@ -582,5 +726,24 @@ function downloadQRCode() {
         <!-- Lightbox Component -->
         <VueEasyLightbox :visible="showLightbox" :imgs="lightboxImages" :index="lightboxIndex"
             @hide="showLightbox = false" />
+            
+        <!-- Video Modal -->
+        <div v-if="showVideoModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" 
+             @click="closeVideoModal">
+            <div class="relative max-w-4xl max-h-full p-4" @click.stop>
+                <button @click="closeVideoModal" 
+                        class="absolute -top-10 -right-10 text-white hover:text-gray-300 text-2xl z-10">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+                <video controls autoplay class="max-w-full max-h-[80vh] rounded-lg">
+                    <source :src="currentVideoUrl" type="video/mp4">
+                    <source :src="currentVideoUrl" type="video/quicktime">
+                    <source :src="currentVideoUrl" type="video/mov">
+                    Video oynatılamıyor.
+                </video>
+            </div>
+        </div>
     </AppLayout>
 </template>
