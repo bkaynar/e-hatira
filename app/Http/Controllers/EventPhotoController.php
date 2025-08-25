@@ -52,7 +52,7 @@ class EventPhotoController extends Controller
                 'order' => $index,
                 'uploader_name' => $request->uploader_name,
                 'uploader_email' => $request->uploader_email,
-                'uploader_ip' => $request->ip(),
+                'uploader_ip' => $this->getRealIpAddress($request),
                 'status' => 'pending',
             ]);
 
@@ -347,7 +347,7 @@ class EventPhotoController extends Controller
                 'order' => $maxOrder + $index + 1,
                 'uploader_name' => $request->uploader_name,
                 'uploader_email' => $request->uploader_email,
-                'uploader_ip' => $request->ip(),
+                'uploader_ip' => $this->getRealIpAddress($request),
                 'status' => 'processing',
             ]);
 
@@ -440,5 +440,36 @@ class EventPhotoController extends Controller
             Log::warning('HEIC convert failed: ' . $e->getMessage());
             return null;
         }
+    }
+
+    protected function getRealIpAddress(Request $request): string
+    {
+        // Proxy başlıklarını kontrol et
+        $ipKeys = [
+            'HTTP_CF_CONNECTING_IP',     // Cloudflare
+            'HTTP_CLIENT_IP',            // Shared internet
+            'HTTP_X_FORWARDED_FOR',      // Load balancer/proxy
+            'HTTP_X_FORWARDED',          // Proxy
+            'HTTP_X_CLUSTER_CLIENT_IP',  // Cluster balancer
+            'HTTP_FORWARDED_FOR',        // Proxy
+            'HTTP_FORWARDED',            // Proxy
+            'REMOTE_ADDR'                // Standard
+        ];
+
+        foreach ($ipKeys as $key) {
+            if (array_key_exists($key, $_SERVER) && !empty($_SERVER[$key])) {
+                $ips = explode(',', $_SERVER[$key]);
+                $ip = trim($ips[0]);
+                
+                // Geçerli IP adresi kontrolü
+                if (filter_var($ip, FILTER_VALIDATE_IP, 
+                    FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                    return $ip;
+                }
+            }
+        }
+
+        // Fallback olarak Laravel'in ip() metodunu kullan
+        return $request->ip();
     }
 }
