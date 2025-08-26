@@ -35,7 +35,7 @@ import { LoaderCircle } from 'lucide-vue-next';
 
                 <div class="grid gap-2">
                     <Label for="password">Password</Label>
-                    <Input id="password" type="password" required :tabindex="3" autocomplete="new-password" name="password" placeholder="Password" />
+                    <Input id="password" type="password" required :tabindex="3" autocomplete="off" name="password" placeholder="Password" data-form-type="other" />
                     <InputError :message="errors.password" />
                 </div>
 
@@ -46,9 +46,10 @@ import { LoaderCircle } from 'lucide-vue-next';
                         type="password"
                         required
                         :tabindex="4"
-                        autocomplete="new-password"
+                        autocomplete="off"
                         name="password_confirmation"
                         placeholder="Confirm password"
+                        data-form-type="other"
                     />
                     <InputError :message="errors.password_confirmation" />
                 </div>
